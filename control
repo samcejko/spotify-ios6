@@ -1,0 +1,9 @@
+Package: com.samcejko.spot6
+Name: Spot6
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Unofficial Spotify client for iOS 6 (universal), in English and Czech: Home, search, your library and playlists, albums, artists, podcasts, synced lyrics, queue, shuffle and repeat, song radio, gapless playback in up to 320 kbit/s, the lock screen controls. Log in from the Spotify app on your phone. Needs Spotify Premium.
+Maintainer: samcejko
+Author: samcejko
+Section: Multimedia
+Depends: firmware (>= 6.0)

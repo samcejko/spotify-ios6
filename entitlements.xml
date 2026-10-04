@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Entitlements for the ldid pseudo-signature. The keychain group lets the app keep its data in the
+	     keychain instead of the preferences (securityd refuses SecItem calls without one: -25308). -->
+	<key>application-identifier</key>
+	<string>com.samcejko.spot6</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>com.samcejko.spot6</string>
+	</array>
+	<key>get-task-allow</key>
+	<true/>
+</dict>
+</plist>

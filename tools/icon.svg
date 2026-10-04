@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Spot6: a glossy green record with a white 6 on a charcoal tile, in the iOS 6 manner (the gloss is baked in,
+       UIPrerenderedIcon is on) -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4c51"/>
+      <stop offset="1" stop-color="#121315"/>
+    </linearGradient>
+    <linearGradient id="disc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#aee232"/>
+      <stop offset="0.55" stop-color="#84bd00"/>
+      <stop offset="1" stop-color="#4f8000"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="six" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e4eadb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#tile)"/>
+  <rect x="0" y="0" width="1024" height="6" fill="#ffffff" fill-opacity="0.25"/>
+  <circle cx="512" cy="560" r="372" fill="url(#shadow)"/>
+  <circle cx="512" cy="522" r="332" fill="url(#disc)" stroke="#355a00" stroke-width="10"/>
+  <circle cx="512" cy="522" r="292" fill="none" stroke="#000000" stroke-opacity="0.10" stroke-width="5"/>
+  <circle cx="512" cy="522" r="256" fill="none" stroke="#000000" stroke-opacity="0.08" stroke-width="4"/>
+  <circle cx="512" cy="522" r="222" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="4"/>
+  <text x="512" y="672" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="420"
+        fill="#2c4a00" fill-opacity="0.55">6</text>
+  <text x="512" y="664" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="420"
+        fill="url(#six)">6</text>
+  <path d="M0 0 H1024 V438 C790 530 234 530 0 438 Z" fill="url(#gloss)"/>
+</svg>

@@ -1,0 +1,205 @@
+name: Build Spot6 (iOS 6, armv7)
+
+on:
+  push:
+    branches: ['**']   # not for tags, a release tag points at a commit that was already built
+  pull_request:
+  workflow_dispatch:
+
+# The build only reads the repository; nothing here needs a write token.
+permissions:
+  contents: read
+
+env:
+  THEOS: /home/runner/theos
+  MBEDTLS_VERSION: "3.6.7"
+  THEOS_CACHE_KEY: theos-linux-clang11-sdk93-v1
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential fakeroot rsync curl perl zip unzip git libxml2 xz-utils python3-pil fonts-dejavu-core librsvg2-bin libplist-utils libtinfo5 || \
+          sudo apt-get install -y --no-install-recommends \
+            build-essential fakeroot rsync curl perl zip unzip git libxml2 xz-utils python3-pil fonts-dejavu-core librsvg2-bin libplist-utils
+
+      - name: Restore Theos cache
+        id: theos-cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/theos
+          key: ${{ env.THEOS_CACHE_KEY }}
+
+      - name: Install Theos, toolchain and iOS 9.3 SDK
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          git clone --recursive https://github.com/theos/theos.git "$THEOS"
+          mkdir -p "$THEOS/toolchain" "$THEOS/sdks"
+
+          echo "== toolchain =="
+          curl -sSL https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-x86_64.tar.xz | tar -xJ -C "$THEOS/toolchain/"
+          if [ ! -x "$THEOS/toolchain/linux/iphone/bin/clang" ]; then
+            CLANG=$(find "$THEOS/toolchain" -type f -name clang -path '*/bin/*' | head -n1)
+            echo "clang found at: $CLANG"
+            ROOT=$(dirname "$(dirname "$CLANG")")
+            mkdir -p "$THEOS/toolchain/linux"
+            ln -sfn "$ROOT" "$THEOS/toolchain/linux/iphone"
+          fi
+          ls -la "$THEOS/toolchain/linux/iphone/bin" | head -n 40
+
+          echo "== SDK =="
+          SDK_URL=$(curl -sS https://api.github.com/repos/theos/sdks/releases/latest | grep -o 'https://[^"]*iPhoneOS9\.3\.sdk[^"]*' | head -n1 || true)
+          echo "SDK asset: $SDK_URL"
+          if [ -n "$SDK_URL" ]; then
+            curl -sSL "$SDK_URL" -o /tmp/sdk.archive
+            (tar -xJf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || tar -xzf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || unzip -q /tmp/sdk.archive -d "$THEOS/sdks/")
+          fi
+          if [ ! -d "$THEOS/sdks/iPhoneOS9.3.sdk" ]; then
+            echo "Falling back to sparse checkout of theos/sdks"
+            git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/sdks
+            (cd /tmp/sdks && git sparse-checkout set iPhoneOS9.3.sdk)
+            mv /tmp/sdks/iPhoneOS9.3.sdk "$THEOS/sdks/"
+          fi
+          ls "$THEOS/sdks"
+
+      - name: Toolchain diagnostics
+        run: |
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
+          which clang ld64 ldid || true
+          clang --version || true
+          ldd "$THEOS/toolchain/linux/iphone/bin/clang" | grep -i "not found" || echo "clang: all shared libraries resolved"
+          ls "$THEOS/sdks/iPhoneOS9.3.sdk" | head
+
+      - name: Fetch mbedTLS ${{ env.MBEDTLS_VERSION }}
+        run: |
+          set -e
+          curl -sSL "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-${MBEDTLS_VERSION}/mbedtls-${MBEDTLS_VERSION}.tar.bz2" -o /tmp/mbedtls.tar.bz2
+          rm -rf vendor/mbedtls && mkdir -p vendor/mbedtls
+          tar -xjf /tmp/mbedtls.tar.bz2 -C vendor/mbedtls --strip-components=1
+          mv vendor/mbedtls/include/mbedtls/mbedtls_config.h vendor/mbedtls/include/mbedtls/mbedtls_config_default.h
+          cp vendor/mbedtls_config_ios6.h vendor/mbedtls/include/mbedtls/mbedtls_config.h
+          echo "mbedTLS sources: $(ls vendor/mbedtls/library/*.c | wc -l)"
+
+      - name: Fetch CA bundle
+        run: |
+          curl -sSf https://curl.se/ca/cacert.pem -o Resources/cacert.pem
+          grep -c "BEGIN CERTIFICATE" Resources/cacert.pem
+
+      - name: Collect license texts (shipped inside the app)
+        run: |
+          set -e
+          rm -rf Resources/licenses && mkdir -p Resources/licenses
+          cp LICENSE Resources/licenses/Spot6-LICENSE.txt
+          cp THIRD-PARTY-NOTICES.md Resources/licenses/THIRD-PARTY-NOTICES.txt
+          cp vendor/mbedtls/LICENSE Resources/licenses/mbedtls-LICENSE.txt
+          ls -la Resources/licenses
+
+      - name: Generate icons and launch images
+        run: python3 tools/gen_assets.py Resources
+
+      - name: Patch SDK (stub re-exported libraries missing from theos/sdks)
+        run: |
+          set -e
+          # The toolchain's plistutil is linked against libplist-2.0.so.4, which Ubuntu 22.04 does not ship.
+          # Use the distro binary instead (same CLI).
+          S6IN="$THEOS/toolchain/linux/iphone/bin"
+          if [ -x /usr/bin/plistutil ]; then
+            ln -sf /usr/bin/plistutil "$S6IN/plistutil"
+            plistutil --help >/dev/null 2>&1 && echo "plistutil OK" || echo "plistutil still broken"
+          fi
+          SDK="$THEOS/sdks/iPhoneOS9.3.sdk"
+          LIBSYS="$SDK/usr/lib/libSystem.tbd"
+          test -f "$LIBSYS"
+          # libSystem.tbd re-exports /usr/lib/system/*.dylib; the packaged SDK lacks a few of those stubs
+          # (e.g. liblaunch), which makes ld64 fail with "file not found". Create empty S6D stubs.
+          for lib in $(grep -o "/usr/lib/system/lib[A-Za-z0-9_]*\.dylib" "$LIBSYS" | sort -u); do
+            base="${lib%.dylib}"
+            if [ ! -f "$SDK$base.tbd" ] && [ ! -f "$SDK$lib" ]; then
+              mkdir -p "$(dirname "$SDK$base.tbd")"
+              printf -- '---\narchs:           [ armv7, armv7s, arm64 ]\nplatform:        ios\ninstall-name:    %s\ncurrent-version: 1.0\ncompatibility-version: 1.0\nexports:\n  - archs:           [ armv7, armv7s, arm64 ]\n    symbols:         [ ]\n...\n' "$lib" > "$SDK$base.tbd"
+              echo "stubbed $lib"
+            fi
+          done
+          ls "$SDK/usr/lib/system" | head -n 60
+
+          # The packaged libsystem_c.tbd / libsystem_platform.tbd lack the plain libc string/memory
+          # symbols (only __platform_* and *_chk variants are listed), so C code fails to link.
+          # At runtime libSystem.B.dylib provides them on every iOS version, so add them to the stub.
+          LIBC="$SDK/usr/lib/system/libsystem_c.tbd"
+          ADD=""
+          for sym in _memcpy _memset _memmove _memcmp _memchr _strchr _strcmp _strncmp _strlen _strnlen _bzero \
+                     _strcpy _strncpy _strcat _strlcpy _strlcat _strstr _strrchr _strdup _memset_s _memset_pattern4 \
+                     _memset_pattern8 _memset_pattern16 _strncasecmp _strcasecmp; do
+            if ! grep -Eq "[[ ,]${sym}[], ]" "$LIBC" "$SDK/usr/lib/system/libsystem_platform.tbd"; then
+              ADD="${ADD}${sym}, "
+            fi
+          done
+          if [ -n "$ADD" ]; then
+            echo "adding to libsystem_c.tbd: $ADD"
+            sed -i "0,/symbols:            \[ /s//symbols:            [ ${ADD}/" "$LIBC"
+            grep -c "_memcpy" "$LIBC"
+          fi
+
+      - name: Syntax check (every error of our own sources in one go)
+        run: |
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
+          SDK="$THEOS/sdks/iPhoneOS9.3.sdk"
+          FLAGS="-target armv7-apple-ios6.0 -isysroot $SDK -fsyntax-only -w -ferror-limit=0 \
+                 -Isrc -Isrc/Net -Isrc/Spotify -Isrc/Audio -Isrc/UI -Isrc/Util -Ivendor -Ivendor/mbedtls/include -Ivendor/mbedtls/library"
+          status=0
+          for f in $(find src -name '*.m' | sort); do
+            clang $FLAGS -fobjc-arc -x objective-c "$f" 2>&1 | grep -E 'error:' && status=1
+          done
+          if [ $status -ne 0 ]; then echo "SYNTAX CHECK FOUND ERRORS (see above)"; else echo "syntax check clean"; fi
+
+      - name: Build
+        run: |
+          set -o pipefail
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
+          make clean || true
+          # (-k: every file is compiled even after one fails, so one run shows every compile error)
+          make package FINALPACKAGE=1 -j"$(nproc)" -k 2>&1 | tee build.log
+          echo "== staged app =="
+          ls -la .theos/_/Applications/Spot6.app
+
+      - name: Make IPA
+        run: |
+          set -e
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
+          APP=.theos/_/Applications/Spot6.app
+          LDID=$(command -v ldid || find "$THEOS" -type f -name ldid | head -n1)
+          echo "ldid: $LDID"
+          "$LDID" -S"$GITHUB_WORKSPACE/entitlements.xml" "$APP/Spot6"
+          "$LDID" -e "$APP/Spot6" | head -n 20
+          VERSION=$(grep '^Version:' control | cut -d' ' -f2)
+          rm -rf /tmp/ipa && mkdir -p /tmp/ipa/Payload packages
+          cp -a "$APP" /tmp/ipa/Payload/
+          # (the bundle inside keeps the app's first name, Spot6.app; the file is named as the app is shown)
+          (cd /tmp/ipa && zip -qr9 "$GITHUB_WORKSPACE/packages/Spot6-$VERSION.ipa" Payload)
+          ls -la packages/
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spot6-packages
+          path: |
+            packages/*.ipa
+            packages/*.deb
+          if-no-files-found: error
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
