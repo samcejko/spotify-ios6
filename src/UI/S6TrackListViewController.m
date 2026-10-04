@@ -296,37 +296,34 @@ static NSString * const S6TrackCellId = @"track";
     [self startLoading];
     NSUInteger generation = ++self.generation;
     __weak S6TrackListViewController *weakSelf = self;
-    switch (self.kind) {
-        case S6ListAlbum:
-            [S6Catalog album:self.album.uri completion:^(S6Album *album, NSError *error) {
-                S6TrackListViewController *me = weakSelf;
-                if (!me || generation != me.generation) return;
-                if (album) {
-                    me.album = album;
-                    me.listTitle = album.name;
-                    me.contextURI = album.uri;
-                    me.saved = album.saved;
-                }
-                me.tracks = album.tracks ?: @[];
-                [me finishLoadingWithError:me.tracks.count ? nil : error empty:!me.tracks.count emptyMessage:L(@"Nothing here.")];
-                [me showHeader];
-            }];
-            break;
-        case S6ListShow:
-            [S6Catalog show:self.show.uri completion:^(S6Show *show, NSError *error) {
-                S6TrackListViewController *me = weakSelf;
-                if (!me || generation != me.generation || !show) return;
-                me.show = show;
-                me.listTitle = show.name;
-                me.saved = show.saved;
-                [me showHeader];
-            }];
-            [self loadFrom:0 into:[NSMutableArray array] generation:generation];
-            break;
-        default:
-            [self loadFrom:0 into:[NSMutableArray array] generation:generation];
-            break;
+    // (if/else, not a switch: blocks in case labels without braces are a compile error under ARC)
+    if (self.kind == S6ListAlbum) {
+        [S6Catalog album:self.album.uri completion:^(S6Album *album, NSError *error) {
+            S6TrackListViewController *me = weakSelf;
+            if (!me || generation != me.generation) return;
+            if (album) {
+                me.album = album;
+                me.listTitle = album.name;
+                me.contextURI = album.uri;
+                me.saved = album.saved;
+            }
+            me.tracks = album.tracks ?: @[];
+            [me finishLoadingWithError:me.tracks.count ? nil : error empty:!me.tracks.count emptyMessage:L(@"Nothing here.")];
+            [me showHeader];
+        }];
+        return;
     }
+    if (self.kind == S6ListShow) {
+        [S6Catalog show:self.show.uri completion:^(S6Show *show, NSError *error) {
+            S6TrackListViewController *me = weakSelf;
+            if (!me || generation != me.generation || !show) return;
+            me.show = show;
+            me.listTitle = show.name;
+            me.saved = show.saved;
+            [me showHeader];
+        }];
+    }
+    [self loadFrom:0 into:[NSMutableArray array] generation:generation];
 }
 
 // Playlists, Liked Songs and a show's episodes come page after page; the list grows as they arrive
@@ -351,27 +348,21 @@ static NSString * const S6TrackCellId = @"track";
                       emptyMessage:kind == S6ListLiked ? L(@"Songs you like show up here. Tap the heart.") : L(@"Nothing here.")];
         [me showHeader];
     } copy];
-    switch (kind) {
-        case S6ListPlaylist:
-            [S6Catalog playlist:self.playlist.uri offset:offset limit:100 completion:^(S6Playlist *playlist, NSArray *tracks, NSInteger total, NSError *error) {
-                S6TrackListViewController *me = weakSelf;
-                if (playlist && offset == 0 && me && generation == me.generation) {
-                    me.playlist = playlist;
-                    me.listTitle = playlist.name;
-                    me.contextURI = playlist.uri;
-                    me.saved = playlist.saved;
-                }
-                page(tracks, total, error);
-            }];
-            break;
-        case S6ListLiked:
-            [S6Catalog likedSongsOffset:offset limit:100 completion:page];
-            break;
-        case S6ListShow:
-            [S6Catalog showEpisodes:self.show.uri offset:offset limit:50 completion:page];
-            break;
-        default:
-            break;
+    if (kind == S6ListPlaylist) {
+        [S6Catalog playlist:self.playlist.uri offset:offset limit:100 completion:^(S6Playlist *playlist, NSArray *tracks, NSInteger total, NSError *error) {
+            S6TrackListViewController *me = weakSelf;
+            if (playlist && offset == 0 && me && generation == me.generation) {
+                me.playlist = playlist;
+                me.listTitle = playlist.name;
+                me.contextURI = playlist.uri;
+                me.saved = playlist.saved;
+            }
+            page(tracks, total, error);
+        }];
+    } else if (kind == S6ListLiked) {
+        [S6Catalog likedSongsOffset:offset limit:100 completion:page];
+    } else if (kind == S6ListShow) {
+        [S6Catalog showEpisodes:self.show.uri offset:offset limit:50 completion:page];
     }
 }
 

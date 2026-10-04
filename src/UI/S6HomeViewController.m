@@ -68,7 +68,7 @@
         S6HomeViewController *me = weakSelf;
         if (greeting.length) me.greeting.text = greeting;
         NSMutableArray *shelves = [NSMutableArray array];
-        for (S6Section *s in sections) {
+        for (S6Shelf *s in sections) {
             NSMutableArray *cards = [NSMutableArray array];
             for (id item in s.items) {
                 NSDictionary *card = S6CardFor(item);

@@ -3,7 +3,7 @@
 @class S6Album, S6Artist, S6Playlist, S6Show, S6Track;
 
 // A titled row of things (a shelf of Home, a browse page)
-@interface S6Section : NSObject
+@interface S6Shelf : NSObject
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, copy) NSArray *items;          // S6Album, S6Playlist, S6Artist, S6Show, S6Track (episodes)
 @end

@@ -276,7 +276,7 @@ enum { S6SearchTop, S6SearchSongs, S6SearchArtists, S6SearchAlbums, S6SearchPlay
 
 @interface S6CategoryViewController ()
 @property (nonatomic, copy) NSString *pageURI;
-@property (nonatomic, strong) NSArray *sections;   // S6Section
+@property (nonatomic, strong) NSArray *sections;   // S6Shelf
 @end
 
 @implementation S6CategoryViewController

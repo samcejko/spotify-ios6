@@ -6,7 +6,7 @@
 #import "S6Utils.h"
 #import "S6Common.h"
 
-@implementation S6Section
+@implementation S6Shelf
 @end
 
 @implementation S6ArtistPage
@@ -80,7 +80,7 @@ static NSArray *S6Sections(id sectionList, NSString *untitled)
             if (e) [items addObject:e];
         }
         if (!items.count) continue;
-        S6Section *out = [[S6Section alloc] init];
+        S6Shelf *out = [[S6Shelf alloc] init];
         out.title = S6Str(S6Dict(S6Dict(section[@"data"])[@"title"])[@"transformedLabel"]) ?: untitled;
         out.items = items;
         [sections addObject:out];
