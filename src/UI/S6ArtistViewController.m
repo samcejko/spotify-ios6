@@ -99,8 +99,9 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
     CGFloat x = pad + side + 20;
     self.nameLabel.frame = CGRectMake(x, pad + side / 2 - 48, w - x - pad, 40);
     self.infoLabel.frame = CGRectMake(x, pad + side / 2 - 6, w - x - pad, 18);
-    self.playButton.frame = CGRectMake(x, pad + side / 2 + 20, 100, 32);
-    self.followButton.frame = CGRectMake(x + 110, pad + side / 2 + 20, 120, 32);
+    CGFloat pw = [theme widthForButton:self.playButton minimum:100];
+    self.playButton.frame = CGRectMake(x, pad + side / 2 + 20, pw, 32);
+    self.followButton.frame = CGRectMake(x + pw + 10, pad + side / 2 + 20, [theme widthForButton:self.followButton minimum:110], 32);
     self.header.frame = CGRectMake(0, 0, w, side + pad * 2);
     self.tableView.tableHeaderView = self.header;
 }

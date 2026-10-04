@@ -88,6 +88,7 @@ typedef NS_ENUM(NSInteger, S6Icon) {
 - (void)applyToSearchBar:(UISearchBar *)bar;
 - (UIButton *)greenButtonWithTitle:(NSString *)title;
 - (UIButton *)outlineButtonWithTitle:(NSString *)title;
+- (CGFloat)widthForButton:(UIButton *)button minimum:(CGFloat)minimum;   // its title fits (Czech words are longer)
 - (UIActivityIndicatorViewStyle)spinnerStyle;
 
 @end

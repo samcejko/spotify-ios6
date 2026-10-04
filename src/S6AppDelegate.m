@@ -6,6 +6,7 @@
 #import "S6Session.h"
 #import "S6Tokens.h"
 #import "S6Pathfinder.h"
+#import "S6Catalog.h"
 #import "S6SpClient.h"
 #import "S6Zeroconf.h"
 #import "S6Models.h"
@@ -253,14 +254,19 @@ static BOOL S6PressView(UIView *v, NSString *text)
         NSString *uri = params[@"uri"];
         NSString *trackId = [S6URIType(uri) isEqualToString:@"track"] ? S6URIId(uri) : nil;
         if (!trackId.length) { [S6Router openURI:uri]; return YES; }
-        // (straight to the engine: the song needs nothing but its id)
-        S6Track *t = [[S6Track alloc] init];
-        t.trackId = trackId;
-        t.uri = uri;
-        t.name = params[@"name"] ?: uri;
-        t.playable = YES;
-        S6Log(@"Play %@", uri);
-        [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:uri contextName:t.name];
+        [S6Catalog tracksForURIs:@[ uri ] completion:^(NSArray *tracks, NSError *error) {
+            S6Track *t = tracks.firstObject;
+            if (!t) {
+                // (straight to the engine: the song needs nothing but its id)
+                t = [[S6Track alloc] init];
+                t.trackId = trackId;
+                t.uri = uri;
+                t.name = uri;
+                t.playable = YES;
+            }
+            S6Log(@"Play %@ (%@)", uri, t.name);
+            [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:uri contextName:t.name];
+        }];
         return YES;
     }
     if ([target isEqualToString:@"player"]) {

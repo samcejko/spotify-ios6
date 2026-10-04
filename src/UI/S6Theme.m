@@ -700,6 +700,12 @@ static void S6Arrowhead(CGPoint tip, CGFloat angle, CGFloat size)
     return b;
 }
 
+- (CGFloat)widthForButton:(UIButton *)button minimum:(CGFloat)minimum
+{
+    CGSize s = [button.currentTitle ?: @"" sizeWithFont:button.titleLabel.font];
+    return MAX(minimum, ceilf(s.width) + button.contentEdgeInsets.left + button.contentEdgeInsets.right + 6);
+}
+
 - (UIActivityIndicatorViewStyle)spinnerStyle { return UIActivityIndicatorViewStyleWhite; }
 
 @end
