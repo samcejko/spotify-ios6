@@ -1,7 +1,8 @@
-/* Spot6 - ÄeÅ¡tina */
+/* Spot6 - čeština */
 
 "%@ followers" = "%@ sledujících";
 "%@ likes" = "%@ uloÅ¾enÃ­";
+"%@ monthly listeners" = "Posluchači za měsíc: %@";
 "%@ Radio" = "Rádio: %@";
 "%@ viewers" = "%@ diváků";
 "%ld days ago" = "před %ld dny";
@@ -48,8 +49,10 @@
 "Country" = "Země";
 "Create" = "Vytvořit";
 "Device name" = "Název zařízení";
+"Episode" = "Epizoda";
+"Episodes" = "Epizody";
 "Fans also like" = "Fanoušci poslouchají také";
-"Featured playlists" = "Doporučené playlisty";
+"Featuring" = "Playlisty s interpretem";
 "Follow" = "Sledovat";
 "Following" = "Sleduješ";
 "Free" = "Free";
@@ -80,7 +83,6 @@
 "MIT License: how Spotify's protocol works was learned from it (no code of it is in the app)." = "Licence MIT: z něj je známo, jak funguje protokol Spotify (žádný jeho kód v aplikaci není).";
 "More" = "Více";
 "New playlist" = "Nový playlist";
-"New releases" = "Novinky";
 "Next from: %@" = "Další z: %@";
 "Next in queue" = "Další ve frontě";
 "No lyrics for this song." = "K této skladbě není text.";
@@ -115,9 +117,9 @@
 "Popular" = "Populární";
 "Public domain: the Ogg Vorbis decoder." = "Volné dílo: dekodér Ogg Vorbis.";
 "Queue" = "Fronta";
+"Quick picks" = "Rychlý výběr";
 "Receiving the response failed: %@" = "Příjem odpovědi selhal: %@";
 "Recent searches" = "Nedávná hledání";
-"Recently played" = "Nedávno přehrávané";
 "Remove" = "Odebrat";
 "Remove from this playlist" = "Odebrat z tohoto playlistu";
 "Removed" = "Odebráno";
@@ -135,6 +137,7 @@
 "Shuffle" = "Náhodně";
 "Single" = "Singl";
 "Singles and EPs" = "Singly a EP";
+"Song" = "Skladba";
 "Song radio" = "Rádio skladby";
 "Songs" = "Skladby";
 "Songs you like show up here. Tap the heart." = "Tady budou skladby, které se ti líbí. Klepni na srdíčko.";
@@ -156,7 +159,6 @@
 "Spotify did not hand over the song's key in time." = "Spotify nepředalo klíč skladby včas.";
 "Spotify did not say where the song can be downloaded." = "Spotify neřeklo, odkud jde skladbu stáhnout.";
 "Spotify does not allow logging in from this country." = "Spotify z této země nedovoluje přihlášení.";
-"Spotify is busy, try again in a moment." = "Spotify je zaneprázdněné, zkus to za chvíli.";
 "Spotify Premium is required." = "Je potřeba Spotify Premium.";
 "Spotify refused the connection (error %llu)." = "Spotify odmítlo spojení (chyba %llu).";
 "Spotify refused the login (error %llu)." = "Spotify odmítlo přihlášení (chyba %llu).";
@@ -174,6 +176,7 @@
 "The connection to Spotify was closed." = "Spojení se Spotify bylo ukončeno.";
 "The download broke off." = "Stahování se přerušilo.";
 "The name you pick in the Spotify app on your phone to log in. While Spot6 is open, your phone can see it on the same Wi-Fi." = "Název, který vybereš v aplikaci Spotify v telefonu, když se chceš přihlásit. Dokud je Spot6 otevřený, telefon ho na stejné Wi-Fi vidí.";
+"The playlist could not be created." = "Playlist nešlo vytvořit.";
 "The server closed the connection without responding." = "Server ukončil spojení bez odpovědi.";
 "The server could not prove that it is Spotify." = "Server nedokázal, že je to Spotify.";
 "The server sent an invalid response." = "Server poslal neplatnou odpověď.";
@@ -185,6 +188,7 @@
 "This device" = "Toto zařízení";
 "This device could not show itself on the Wi-Fi. Check that Wi-Fi is on." = "Toto zařízení se nemohlo ukázat na Wi-Fi. Zkontroluj, že je Wi-Fi zapnutá.";
 "This episode is not hosted on Spotify, it cannot be played here yet." = "Tato epizoda není uložená na Spotify, tady ji zatím nejde přehrát.";
+"This playlist is not available." = "Tento playlist není dostupný.";
 "This song cannot be played." = "Tuto skladbu nejde přehrát.";
 "This song is not available." = "Tato skladba není dostupná.";
 "This song is restricted." = "Tato skladba je omezená.";
@@ -192,6 +196,7 @@
 "TLS handshake timed out." = "Navázání TLS vypršelo.";
 "To log in again, pick this device in the Spotify app on your phone." = "Pro nové přihlášení vyber toto zařízení v aplikaci Spotify v telefonu.";
 "Too many redirects." = "Příliš mnoho přesměrování.";
+"Top result" = "Nejlepší výsledek";
 "Try again" = "Zkusit znovu";
 "Unexpected response format." = "Nečekaný formát odpovědi.";
 "Unexpected response: %@" = "Nečekaná odpověď: %@";
@@ -205,6 +210,3 @@
 "You are not logged in." = "Není přihlášen žádný účet.";
 "You have no playlists of your own yet." = "Zatím nemáš žádné vlastní playlisty.";
 "Your Library" = "Knihovna";
-"Your playlists" = "Tvoje playlisty";
-"Your top artists" = "Tvoji nejposlouchanější interpreti";
-"Your top songs" = "Tvoje nejposlouchanější skladby";

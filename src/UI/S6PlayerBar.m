@@ -3,7 +3,7 @@
 #import "S6Router.h"
 #import "S6Theme.h"
 #import "S6Models.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
 #import "S6Common.h"
@@ -196,7 +196,8 @@
         [self showLiked];
         if (t.trackId.length && !t.isEpisode) {
             NSString *uri = t.uri;
-            [S6WebAPI isTrackSaved:t.trackId completion:^(BOOL saved) {
+            [S6Catalog areSaved:@[ t.uri ] completion:^(NSArray *savedList, NSError *savedError) {
+                BOOL saved = [savedList.firstObject boolValue];
                 if (![uri isEqualToString:self.shownURI]) return;
                 self.liked = saved;
                 [self showLiked];
@@ -257,7 +258,7 @@
     BOOL like = !self.liked;
     self.liked = like;
     [self showLiked];
-    [S6WebAPI setTrack:t.trackId saved:like completion:^(NSError *error) {
+    [S6Catalog setSaved:like uris:@[ t.uri ] completion:^(NSError *error) {
         if (error) { self.liked = !like; [self showLiked]; [S6Router toast:error.localizedDescription]; return; }
         [S6Router toast:like ? L(@"Added to Liked Songs") : L(@"Removed from Liked Songs")];
     }];

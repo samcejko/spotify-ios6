@@ -8,7 +8,6 @@
 #import "S6Pathfinder.h"
 #import "S6SpClient.h"
 #import "S6Zeroconf.h"
-#import "S6WebAPI.h"
 #import "S6Models.h"
 #import "S6Player.h"
 #import "S6TLSSocket.h"
@@ -142,7 +141,6 @@ static BOOL S6PressView(UIView *v, NSString *text)
         S6Log(@"Top: %@, section %ld", NSStringFromClass([top class]), (long)root.section);
         S6Log(@"Session: %@", [[S6Session shared] debugState]);
         S6Log(@"Tokens: %@", [[S6Tokens shared] debugState]);
-        S6Log(@"Web API: %@", [S6WebAPI debugState]);
         S6Log(@"Zeroconf: %@ on port %u, %@", zc.running ? @"running" : @"stopped", zc.port, zc.lastEvent ?: @"-");
         S6Log(@"Player: %@", [[S6Player shared] debugState]);
         return YES;

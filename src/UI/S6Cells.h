@@ -33,5 +33,16 @@
 - (void)showItems:(NSArray *)items cardWidth:(CGFloat)width;   // items: NSDictionary {title, subtitle, image, round, item}
 @end
 
+// A row of coloured tiles (the browse categories): items NSDictionary {title, image, color, uri}
+@interface S6TileRowCell : UITableViewCell
+@property (nonatomic, copy) void (^onSelect)(id item);
++ (CGFloat)heightForWidth:(CGFloat)width columns:(NSInteger)columns;
+- (void)showTiles:(NSArray *)tiles columns:(NSInteger)columns;
+@end
+
 // The title of a section in the style of the time: small capitals on a dark bar
 UIView *S6SectionHeader(NSString *title, CGFloat width);
+
+// A shelf card for anything that can stand on a shelf: an album, playlist, artist, show, episode or song, or a browse
+// category (NSDictionary {title, uri, image})
+NSDictionary *S6CardFor(id item);

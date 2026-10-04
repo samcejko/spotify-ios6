@@ -283,3 +283,162 @@ UIView *S6SectionHeader(NSString *title, CGFloat width)
 }
 
 @end
+
+NSDictionary *S6CardFor(id item)
+{
+    if ([item isKindOfClass:[S6Album class]]) {
+        S6Album *a = item;
+        NSString *sub = a.year.length ? [NSString stringWithFormat:@"%@ · %@", a.year, [a artistNames]] : [a artistNames];
+        return @{ @"title": a.name ?: @"", @"subtitle": sub ?: @"", @"image": [a imageURLForSize:300] ?: @"", @"item": a };
+    }
+    if ([item isKindOfClass:[S6Playlist class]]) {
+        S6Playlist *p = item;
+        NSString *sub = p.descriptionText.length ? p.descriptionText : (p.ownerName.length ? [NSString stringWithFormat:L(@"by %@"), p.ownerName] : @"");
+        return @{ @"title": p.name ?: @"", @"subtitle": sub, @"image": [p imageURLForSize:300] ?: @"", @"item": p };
+    }
+    if ([item isKindOfClass:[S6Artist class]]) {
+        S6Artist *a = item;
+        return @{ @"title": a.name ?: @"", @"subtitle": L(@"Artist"), @"image": [a imageURLForSize:300] ?: @"", @"round": @YES, @"item": a };
+    }
+    if ([item isKindOfClass:[S6Show class]]) {
+        S6Show *s = item;
+        return @{ @"title": s.name ?: @"", @"subtitle": s.publisher ?: L(@"Podcast"), @"image": [s imageURLForSize:300] ?: @"", @"item": s };
+    }
+    if ([item isKindOfClass:[S6Track class]]) {
+        S6Track *t = item;
+        NSString *sub = t.isEpisode ? t.album.name : [t artistNames];
+        return @{ @"title": t.name ?: @"", @"subtitle": sub ?: @"", @"image": [t imageURLForSize:300] ?: @"", @"item": t };
+    }
+    if ([item isKindOfClass:[NSDictionary class]]) {
+        NSDictionary *c = item;
+        return @{ @"title": c[@"title"] ?: @"", @"subtitle": @"", @"image": c[@"image"] ?: @"", @"item": c };
+    }
+    return nil;
+}
+
+#pragma mark - Tiles
+
+@interface S6TileView : UIControl
+@property (nonatomic, strong) UILabel *titleLabel;
+@property (nonatomic, strong) S6ImageView *art;
+@property (nonatomic, strong) UIImageView *gloss;
+@property (nonatomic, strong) id item;
+@end
+
+@implementation S6TileView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    if ((self = [super initWithFrame:frame])) {
+        self.layer.cornerRadius = 6;
+        self.clipsToBounds = YES;
+        _art = [[S6ImageView alloc] initWithFrame:CGRectZero];
+        _art.contentMode = UIViewContentModeScaleAspectFill;
+        _art.clipsToBounds = YES;
+        _art.userInteractionEnabled = NO;
+        _art.layer.shadowColor = [UIColor blackColor].CGColor;
+        [self addSubview:_art];
+        _gloss = [[UIImageView alloc] initWithImage:[[S6Theme shared] shadowImageTop:NO]];
+        _gloss.alpha = 0.35;
+        _gloss.userInteractionEnabled = NO;
+        [self addSubview:_gloss];
+        _titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        _titleLabel.font = [UIFont fontWithName:@"HelveticaNeue-Bold" size:S6IsPad() ? 17 : 15] ?: [UIFont boldSystemFontOfSize:16];
+        _titleLabel.textColor = [UIColor whiteColor];
+        _titleLabel.backgroundColor = [UIColor clearColor];
+        _titleLabel.numberOfLines = 2;
+        _titleLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.45];
+        _titleLabel.shadowOffset = CGSizeMake(0, 1);
+        [self addSubview:_titleLabel];
+    }
+    return self;
+}
+
+- (void)setHighlighted:(BOOL)highlighted
+{
+    [super setHighlighted:highlighted];
+    self.alpha = highlighted ? 0.7 : 1;
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    CGSize s = self.bounds.size;
+    self.gloss.frame = CGRectMake(0, s.height / 2, s.width, s.height / 2);
+    self.titleLabel.frame = CGRectMake(10, 8, s.width - 20, 40);
+    [self.titleLabel sizeToFit];
+    CGRect f = self.titleLabel.frame;
+    f.size.width = MIN(f.size.width, s.width - 20);
+    self.titleLabel.frame = f;
+    // the artwork tilted into the bottom right corner, as Spotify's tiles have it
+    CGFloat side = s.height * 0.62;
+    self.art.transform = CGAffineTransformIdentity;
+    self.art.frame = CGRectMake(0, 0, side, side);
+    self.art.center = CGPointMake(s.width - side * 0.32, s.height - side * 0.30);
+    self.art.transform = CGAffineTransformMakeRotation((CGFloat)(25.0 * M_PI / 180.0));
+}
+
+@end
+
+@interface S6TileRowCell ()
+@property (nonatomic, strong) NSMutableArray *tiles;
+@end
+
+@implementation S6TileRowCell
+
++ (CGFloat)heightForWidth:(CGFloat)width columns:(NSInteger)columns
+{
+    CGFloat tileW = (width - 12 - 12 * (CGFloat)columns) / (CGFloat)MAX(1, columns);
+    return floorf(tileW * 0.56f) + 12;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    if ((self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier])) {
+        self.backgroundColor = [UIColor clearColor];
+        self.selectionStyle = UITableViewCellSelectionStyleNone;
+        _tiles = [NSMutableArray array];
+    }
+    return self;
+}
+
+- (void)showTiles:(NSArray *)tiles columns:(NSInteger)columns
+{
+    while (self.tiles.count < (NSUInteger)columns) {
+        S6TileView *t = [[S6TileView alloc] initWithFrame:CGRectZero];
+        [t addTarget:self action:@selector(tapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self.contentView addSubview:t];
+        [self.tiles addObject:t];
+    }
+    for (NSUInteger i = 0; i < self.tiles.count; i++) {
+        S6TileView *t = self.tiles[i];
+        t.hidden = i >= tiles.count || i >= (NSUInteger)columns;
+        if (t.hidden) continue;
+        NSDictionary *d = tiles[i];
+        t.item = d;
+        t.titleLabel.text = d[@"title"];
+        t.backgroundColor = [S6Utils colorFromHex:d[@"color"]] ?: [UIColor darkGrayColor];
+        [t.art setImageURL:d[@"image"] placeholder:nil];
+    }
+    self.tag = columns;
+    [self setNeedsLayout];
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    NSInteger columns = MAX(1, self.tag);
+    CGSize s = self.contentView.bounds.size;
+    CGFloat gap = 12, w = (s.width - gap - gap * (CGFloat)columns) / (CGFloat)columns, h = s.height - gap;
+    for (NSUInteger i = 0; i < self.tiles.count; i++) {
+        UIView *t = self.tiles[i];
+        t.frame = CGRectMake(floorf(gap + (CGFloat)i * (w + gap)), 6, floorf(w), floorf(h));
+    }
+}
+
+- (void)tapped:(S6TileView *)tile
+{
+    if (self.onSelect && tile.item) self.onSelect(tile.item);
+}
+
+@end

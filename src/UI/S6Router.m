@@ -3,9 +3,10 @@
 #import "S6TrackListViewController.h"
 #import "S6ArtistViewController.h"
 #import "S6PlaylistPickerViewController.h"
+#import "S6SearchViewController.h"
 #import "S6Models.h"
 #import "S6Player.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6SpClient.h"
 #import "S6Theme.h"
 #import "S6Common.h"
@@ -126,14 +127,48 @@
         s.showId = identifier;
         s.uri = u;
         [self openShow:s];
-    } else if ([type isEqualToString:@"track"]) {
-        [S6WebAPI get:[@"/tracks/" stringByAppendingString:identifier] completion:^(id json, NSError *error) {
-            S6Track *t = error ? nil : [S6Track trackFromJSON:json];
+    } else if ([type isEqualToString:@"track"] || [type isEqualToString:@"episode"]) {
+        [S6Catalog tracksForURIs:@[ u ] completion:^(NSArray *tracks, NSError *error) {
+            S6Track *t = tracks.firstObject;
             if (!t) { [self toast:error.localizedDescription ?: L(@"This song is not available.")]; return; }
             [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:t.uri contextName:t.name];
-            if (t.album.albumId.length) [self openAlbum:t.album];
+            if (t.album.albumId.length && !t.isEpisode) [self openAlbum:t.album];
         }];
+    } else if ([type isEqualToString:@"page"]) {
+        [self push:[[S6CategoryViewController alloc] initWithCategoryId:u name:@""]];
     }
+}
+
++ (void)openItem:(id)item
+{
+    if ([item isKindOfClass:[S6Album class]]) [self openAlbum:item];
+    else if ([item isKindOfClass:[S6Playlist class]]) [self openPlaylist:item];
+    else if ([item isKindOfClass:[S6Artist class]]) [self openArtist:item];
+    else if ([item isKindOfClass:[S6Show class]]) [self openShow:item];
+    else if ([item isKindOfClass:[S6Track class]]) {
+        S6Track *t = item;
+        [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:t.uri contextName:t.isEpisode ? t.album.name : t.name];
+    } else if ([item isKindOfClass:[NSDictionary class]] && [item[@"uri"] length]) {
+        [self push:[[S6CategoryViewController alloc] initWithCategoryId:item[@"uri"] name:item[@"title"]]];
+    }
+}
+
++ (void)playRadioFor:(S6Track *)track
+{
+    if (!track.uri.length) return;
+    [self toast:L(@"Starting radio…")];
+    [S6SpClient radioForURI:track.uri completion:^(NSArray *uris, NSError *error) {
+        NSMutableArray *list = [NSMutableArray array];
+        for (NSString *u in uris) if (list.count < 50 && ![u isEqualToString:track.uri]) [list addObject:u];
+        if (!list.count) { [self toast:error.localizedDescription ?: L(@"No radio for this.")]; return; }
+        [S6Catalog tracksForURIs:list completion:^(NSArray *found, NSError *e) {
+            NSMutableArray *tracks = [NSMutableArray arrayWithObject:track];
+            for (S6Track *x in found) if (x.uri.length && ![x.uri isEqualToString:track.uri]) [tracks addObject:x];
+            if (tracks.count < 2) { [self toast:e.localizedDescription ?: L(@"No radio for this.")]; return; }
+            [[S6Player shared] playTracks:tracks startingAt:0 contextURI:[@"spotify:radio:" stringByAppendingString:track.trackId ?: @""]
+                              contextName:[NSString stringWithFormat:L(@"%@ Radio"), track.name]];
+        }];
+    }];
 }
 
 + (void)showNowPlaying
@@ -157,26 +192,10 @@
     }
     if (!track.isEpisode && track.trackId.length) {
         [sheet addButton:L(@"Save to Liked Songs") action:^{
-            [S6WebAPI setTrack:track.trackId saved:YES completion:^(NSError *error) { [self toast:error ? error.localizedDescription : L(@"Added to Liked Songs")]; }];
+            [S6Catalog setSaved:YES uris:@[ track.uri ] completion:^(NSError *error) { [self toast:error ? error.localizedDescription : L(@"Added to Liked Songs")]; }];
         }];
         [sheet addButton:L(@"Add to playlist") action:^{ [self addTrackToPlaylist:track]; }];
-        [sheet addButton:L(@"Song radio") action:^{
-            [self toast:L(@"Starting radio…")];
-            [S6SpClient radioForURI:track.uri completion:^(NSArray *uris, NSError *error) {
-                NSMutableArray *ids = [NSMutableArray array];
-                for (NSString *u in uris) if (ids.count < 50 && S6URIId(u).length) [ids addObject:S6URIId(u)];
-                if (!ids.count) { [self toast:error.localizedDescription ?: L(@"No radio for this.")]; return; }
-                [S6WebAPI get:[NSString stringWithFormat:@"/tracks?ids=%@", [ids componentsJoinedByString:@","]] completion:^(id json, NSError *e) {
-                    NSMutableArray *tracks = [NSMutableArray arrayWithObject:track];
-                    for (id t in S6Arr(S6Dict(json)[@"tracks"])) {
-                        S6Track *x = [S6Track trackFromJSON:t];
-                        if (x.uri.length && ![x.uri isEqualToString:track.uri]) [tracks addObject:x];
-                    }
-                    [player playTracks:tracks startingAt:0 contextURI:[@"spotify:radio:" stringByAppendingString:track.trackId]
-                           contextName:[NSString stringWithFormat:L(@"%@ Radio"), track.name]];
-                }];
-            }];
-        }];
+        [sheet addButton:L(@"Song radio") action:^{ [self playRadioFor:track]; }];
     }
     if (track.album.albumId.length) [sheet addButton:L(@"Go to album") action:^{ [self openAlbum:track.album]; }];
     S6Artist *artist = track.artists.firstObject;
@@ -187,9 +206,9 @@
             [self toast:L(@"Link copied")];
         }];
     }
-    if (playlist.playlistId.length && track.uri.length) {
+    if (playlist.editable && playlist.uri.length && track.uid.length) {
         [sheet addDestructiveButton:L(@"Remove from this playlist") action:^{
-            [S6WebAPI removeTrackURI:track.uri fromPlaylist:playlist.playlistId completion:^(NSError *error) {
+            [S6Catalog removeTrackUIDs:@[ track.uid ] fromPlaylist:playlist.uri completion:^(NSError *error) {
                 [self toast:error ? error.localizedDescription : L(@"Removed")];
             }];
         }];
@@ -202,10 +221,11 @@
     if (!track.uri.length) return;
     S6PlaylistPickerViewController *picker = [[S6PlaylistPickerViewController alloc] initWithCompletion:^(S6Playlist *playlist) {
         if (!playlist) return;
-        [S6WebAPI addTrackURIs:@[ track.uri ] toPlaylist:playlist.playlistId completion:^(NSError *error) {
+        [S6Catalog addTracks:@[ track.uri ] toPlaylist:playlist.uri completion:^(NSError *error) {
             [self toast:error ? error.localizedDescription : [NSString stringWithFormat:L(@"Added to %@"), playlist.name]];
         }];
     }];
+    picker.trackURI = track.uri;
     [[S6RootViewController shared] presentSheet:picker];
 }
 

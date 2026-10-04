@@ -3,7 +3,7 @@
 #import "S6Router.h"
 #import "S6Theme.h"
 #import "S6Models.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6Player.h"
 #import "S6Session.h"
 #import "S6ImageLoader.h"
@@ -22,8 +22,8 @@ static NSString * const S6TrackCellId = @"track";
 @property (nonatomic, copy) NSString *contextURI;
 @property (nonatomic, copy) NSString *listTitle;
 @property (nonatomic, strong) NSArray *tracks;
-@property (nonatomic, strong) S6APITask *task;
-@property (nonatomic) BOOL saved;               // the album saved / the playlist followed
+@property (nonatomic) NSUInteger generation;    // a newer load makes the answers of an older one go unused
+@property (nonatomic) BOOL saved;               // the album saved / the playlist or podcast followed
 @property (nonatomic) NSInteger total;
 // header
 @property (nonatomic, strong) UIView *header;
@@ -98,7 +98,7 @@ static NSString * const S6TrackCellId = @"track";
     return self;
 }
 
-- (void)dealloc { [self.task cancel]; }
+- (void)dealloc { [[NSNotificationCenter defaultCenter] removeObserver:self]; }
 
 #pragma mark - View
 
@@ -190,7 +190,7 @@ static NSString * const S6TrackCellId = @"track";
             NSInteger n = self.playlist.totalTracks ?: (NSInteger)self.tracks.count;
             if (n) [bits addObject:[NSString stringWithFormat:L(@"%lu songs"), (unsigned long)n]];
             info = [bits componentsJoinedByString:@" · "];
-            description = [self plainText:self.playlist.descriptionText];
+            description = S6PlainText(self.playlist.descriptionText);
             break;
         }
         case S6ListLiked:
@@ -200,7 +200,7 @@ static NSString * const S6TrackCellId = @"track";
         case S6ListShow:
             type = L(@"Podcast");
             info = self.show.publisher ?: @"";
-            description = [self plainText:self.show.descriptionText];
+            description = S6PlainText(self.show.descriptionText);
             break;
         case S6ListTracks:
             info = [NSString stringWithFormat:L(@"%lu songs"), (unsigned long)self.tracks.count];
@@ -215,9 +215,10 @@ static NSString * const S6TrackCellId = @"track";
     } else {
         [self.cover setImageURL:[self imageURL] placeholder:[theme artPlaceholderWithSize:160]];
     }
-    BOOL canSave = self.kind == S6ListAlbum || (self.kind == S6ListPlaylist && ![self.playlist.ownerId isEqualToString:[S6Session shared].username]);
+    BOOL canSave = self.kind == S6ListAlbum || self.kind == S6ListShow ||
+                   (self.kind == S6ListPlaylist && ![self.playlist.ownerId isEqualToString:[S6Session shared].username]);
     self.saveButton.hidden = !canSave;
-    NSString *saveTitle = self.kind == S6ListPlaylist ? (self.saved ? L(@"Following") : L(@"Follow")) : (self.saved ? L(@"Saved") : L(@"Save"));
+    NSString *saveTitle = self.kind == S6ListAlbum ? (self.saved ? L(@"Saved") : L(@"Save")) : (self.saved ? L(@"Following") : L(@"Follow"));
     [self.saveButton setTitle:[saveTitle uppercaseString] forState:UIControlStateNormal];
     self.title = self.listTitle;
     [self layoutHeader];
@@ -238,16 +239,6 @@ static NSString * const S6TrackCellId = @"track";
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
-}
-
-- (NSString *)plainText:(NSString *)html
-{
-    if (!html.length) return nil;
-    NSString *s = [html stringByReplacingOccurrencesOfString:@"<[^>]+>" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, html.length)];
-    s = [s stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
-    s = [s stringByReplacingOccurrencesOfString:@"&#x27;" withString:@"'"];
-    s = [s stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
-    return s;
 }
 
 - (void)layoutHeader
@@ -297,83 +288,89 @@ static NSString * const S6TrackCellId = @"track";
 
 - (void)load
 {
-    [self.task cancel];
     if (self.kind == S6ListTracks) {
         [self finishLoadingWithError:nil empty:!self.tracks.count emptyMessage:L(@"Nothing here.")];
         [self showHeader];
         return;
     }
     [self startLoading];
+    NSUInteger generation = ++self.generation;
     __weak S6TrackListViewController *weakSelf = self;
-    // (explicit copies: these blocks outlive the frame; see the ARC block pitfall)
-    void (^progress)(NSArray *, NSInteger) = [^(NSArray *tracks, NSInteger total) {
-        S6TrackListViewController *me = weakSelf;
-        me.tracks = tracks;
-        me.total = total;
-        [me.tableView reloadData];
-        [me showHeader];
-    } copy];
-    void (^done)(NSArray *, NSError *) = [^(NSArray *tracks, NSError *error) {
-        S6TrackListViewController *me = weakSelf;
-        if (!me) return;
-        me.tracks = tracks ?: @[];
-        [me finishLoadingWithError:error empty:!me.tracks.count emptyMessage:me.kind == S6ListLiked ? L(@"Songs you like show up here. Tap the heart.") : L(@"Nothing here.")];
-        [me showHeader];
-    } copy];
     switch (self.kind) {
-        case S6ListAlbum: {
-            self.task = [S6WebAPI get:[@"/albums/" stringByAppendingString:self.album.albumId] completion:^(id json, NSError *error) {
+        case S6ListAlbum:
+            [S6Catalog album:self.album.uri completion:^(S6Album *album, NSError *error) {
                 S6TrackListViewController *me = weakSelf;
-                S6Album *album = error ? nil : [S6Album albumFromJSON:json];
-                if (!album) { done(nil, error); return; }
-                me.album = album;
-                me.listTitle = album.name;
-                me.contextURI = album.uri;
-                if (album.totalTracks > (NSInteger)album.tracks.count) {
-                    me.task = [S6WebAPI allTracksAt:[NSString stringWithFormat:@"/albums/%@/tracks?limit=50", album.albumId] album:album max:0 progress:progress completion:done];
-                } else {
-                    done(album.tracks, nil);
+                if (!me || generation != me.generation) return;
+                if (album) {
+                    me.album = album;
+                    me.listTitle = album.name;
+                    me.contextURI = album.uri;
+                    me.saved = album.saved;
                 }
-            }];
-            [S6WebAPI get:[@"/me/albums/contains?ids=" stringByAppendingString:self.album.albumId] completion:^(id json, NSError *error) {
-                weakSelf.saved = S6Bool(S6Arr(json).firstObject);
-                [weakSelf showHeader];
+                me.tracks = album.tracks ?: @[];
+                [me finishLoadingWithError:me.tracks.count ? nil : error empty:!me.tracks.count emptyMessage:L(@"Nothing here.")];
+                [me showHeader];
             }];
             break;
-        }
-        case S6ListPlaylist: {
-            self.task = [S6WebAPI get:[NSString stringWithFormat:@"/playlists/%@?fields=id,uri,name,description,owner,images,followers,snapshot_id,tracks.total", self.playlist.playlistId]
-                           completion:^(id json, NSError *error) {
+        case S6ListShow:
+            [S6Catalog show:self.show.uri completion:^(S6Show *show, NSError *error) {
                 S6TrackListViewController *me = weakSelf;
-                S6Playlist *p = error ? nil : [S6Playlist playlistFromJSON:json];
-                if (p) {
-                    me.playlist = p;
-                    me.listTitle = p.name;
-                    me.contextURI = p.uri;
-                    [me showHeader];
+                if (!me || generation != me.generation || !show) return;
+                me.show = show;
+                me.listTitle = show.name;
+                me.saved = show.saved;
+                [me showHeader];
+            }];
+            [self loadFrom:0 into:[NSMutableArray array] generation:generation];
+            break;
+        default:
+            [self loadFrom:0 into:[NSMutableArray array] generation:generation];
+            break;
+    }
+}
+
+// Playlists, Liked Songs and a show's episodes come page after page; the list grows as they arrive
+- (void)loadFrom:(NSInteger)offset into:(NSMutableArray *)all generation:(NSUInteger)generation
+{
+    __weak S6TrackListViewController *weakSelf = self;
+    S6ListKind kind = self.kind;
+    NSInteger max = kind == S6ListShow ? 300 : 3000;
+    void (^page)(NSArray *, NSInteger, NSError *) = [^(NSArray *tracks, NSInteger total, NSError *error) {
+        S6TrackListViewController *me = weakSelf;
+        if (!me || generation != me.generation) return;
+        [all addObjectsFromArray:tracks ?: @[]];
+        me.tracks = [all copy];
+        me.total = total;
+        if (!error && tracks.count && (NSInteger)all.count < MIN(total, max)) {
+            [me.tableView reloadData];
+            [me showHeader];
+            [me loadFrom:offset + (NSInteger)tracks.count into:all generation:generation];
+            return;
+        }
+        [me finishLoadingWithError:all.count ? nil : error empty:!all.count
+                      emptyMessage:kind == S6ListLiked ? L(@"Songs you like show up here. Tap the heart.") : L(@"Nothing here.")];
+        [me showHeader];
+    } copy];
+    switch (kind) {
+        case S6ListPlaylist:
+            [S6Catalog playlist:self.playlist.uri offset:offset limit:100 completion:^(S6Playlist *playlist, NSArray *tracks, NSInteger total, NSError *error) {
+                S6TrackListViewController *me = weakSelf;
+                if (playlist && offset == 0 && me && generation == me.generation) {
+                    me.playlist = playlist;
+                    me.listTitle = playlist.name;
+                    me.contextURI = playlist.uri;
+                    me.saved = playlist.saved;
                 }
-                me.task = [S6WebAPI allTracksAt:[NSString stringWithFormat:@"/playlists/%@/tracks?limit=100&additional_types=track,episode", me.playlist.playlistId]
-                                          album:nil max:0 progress:progress completion:done];
+                page(tracks, total, error);
             }];
             break;
-        }
         case S6ListLiked:
-            self.task = [S6WebAPI allTracksAt:@"/me/tracks?limit=50" album:nil max:0 progress:progress completion:done];
+            [S6Catalog likedSongsOffset:offset limit:100 completion:page];
             break;
-        case S6ListShow: {
-            self.task = [S6WebAPI get:[@"/shows/" stringByAppendingString:self.show.showId] completion:^(id json, NSError *error) {
-                S6TrackListViewController *me = weakSelf;
-                S6Show *show = error ? nil : [S6Show showFromJSON:json];
-                if (show) { me.show = show; me.listTitle = show.name; me.contextURI = show.uri; [me showHeader]; }
-                S6Album *asAlbum = [[S6Album alloc] init];
-                asAlbum.name = me.show.name;
-                asAlbum.uri = me.show.uri;
-                asAlbum.images = me.show.images;
-                me.task = [S6WebAPI allTracksAt:[NSString stringWithFormat:@"/shows/%@/episodes?limit=50", me.show.showId] album:asAlbum max:200 progress:progress completion:done];
-            }];
+        case S6ListShow:
+            [S6Catalog showEpisodes:self.show.uri offset:offset limit:50 completion:page];
             break;
-        }
-        case S6ListTracks:
+        default:
             break;
     }
 }
@@ -394,14 +391,18 @@ static NSString * const S6TrackCellId = @"track";
 
 - (void)toggleSaved
 {
+    NSString *uri = self.kind == S6ListAlbum ? self.album.uri : self.kind == S6ListPlaylist ? self.playlist.uri : self.show.uri;
+    if (!uri.length) return;
     BOOL saved = !self.saved;
-    void (^done)(NSError *) = [^(NSError *error) {
-        if (error) { [S6Router toast:error.localizedDescription]; return; }
-        self.saved = saved;
-        [self showHeader];
-    } copy];
-    if (self.kind == S6ListAlbum) [S6WebAPI setAlbum:self.album.albumId saved:saved completion:done];
-    else if (self.kind == S6ListPlaylist) [S6WebAPI setPlaylist:self.playlist.playlistId followed:saved completion:done];
+    self.saved = saved;
+    [self showHeader];
+    __weak S6TrackListViewController *weakSelf = self;
+    [S6Catalog setSaved:saved uris:@[ uri ] completion:^(NSError *error) {
+        if (!error) return;
+        [S6Router toast:error.localizedDescription];
+        weakSelf.saved = !saved;
+        [weakSelf showHeader];
+    }];
 }
 
 #pragma mark - Table
@@ -434,8 +435,8 @@ static NSString * const S6TrackCellId = @"track";
 {
     if (sender.tag < 0 || sender.tag >= (NSInteger)self.tracks.count) return;
     S6Track *t = self.tracks[(NSUInteger)sender.tag];
-    BOOL mine = self.kind == S6ListPlaylist && [self.playlist.ownerId isEqualToString:[S6Session shared].username];
-    [S6Router showActionsForTrack:t fromView:sender inController:self playlist:mine ? self.playlist : nil];
+    BOOL editable = self.kind == S6ListPlaylist && self.playlist.editable;
+    [S6Router showActionsForTrack:t fromView:sender inController:self playlist:editable ? self.playlist : nil];
 }
 
 @end

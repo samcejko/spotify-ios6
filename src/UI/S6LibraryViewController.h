@@ -17,4 +17,5 @@ typedef NS_ENUM(NSInteger, S6LibraryMode) {
 // Picks one of your playlists (for "Add to playlist"); nil when cancelled
 @interface S6PlaylistPickerViewController : S6ListViewController
 - (instancetype)initWithCompletion:(void (^)(id playlist))completion;
+@property (nonatomic, copy) NSString *trackURI;     // the song to add (Spotify marks the playlists it is already in)
 @end

@@ -19,7 +19,9 @@
 + (void)openShow:(S6Show *)show;
 + (void)openURI:(NSString *)uri;                   // spotify:album:..., spotify:artist:..., spotify:playlist:..., open.spotify.com links
 + (void)openLikedSongs;
++ (void)openItem:(id)item;                         // any shelf item: album, playlist, artist, show, a song or episode (plays), a category
 + (void)push:(UIViewController *)controller;       // onto the content that is on screen (closing what covers it)
++ (void)playRadioFor:(S6Track *)track;             // the song and similar ones after it
 
 + (void)showActionsForTrack:(S6Track *)track fromView:(UIView *)view inController:(UIViewController *)controller
                    playlist:(S6Playlist *)playlist;          // `playlist`: it is in this playlist (removing becomes possible)

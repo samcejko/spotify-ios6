@@ -4,7 +4,7 @@
 #import "S6Cells.h"
 #import "S6Theme.h"
 #import "S6Models.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6SpClient.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
@@ -486,7 +486,8 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
         [self showLiked];
         NSString *uri = t.uri;
         if (t.trackId.length && !t.isEpisode) {
-            [S6WebAPI isTrackSaved:t.trackId completion:^(BOOL saved) {
+            [S6Catalog areSaved:@[ t.uri ] completion:^(NSArray *savedList, NSError *savedError) {
+                BOOL saved = [savedList.firstObject boolValue];
                 if (![uri isEqualToString:self.shownURI]) return;
                 self.liked = saved;
                 [self showLiked];
@@ -542,7 +543,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     BOOL like = !self.liked;
     self.liked = like;
     [self showLiked];
-    [S6WebAPI setTrack:t.trackId saved:like completion:^(NSError *error) {
+    [S6Catalog setSaved:like uris:@[ t.uri ] completion:^(NSError *error) {
         if (error) { self.liked = !like; [self showLiked]; [S6Router toast:error.localizedDescription]; }
     }];
 }

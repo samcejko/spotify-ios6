@@ -1,7 +1,7 @@
 #import "S6SidebarViewController.h"
 #import "S6Session.h"
 #import "S6Settings.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6Models.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
@@ -72,7 +72,7 @@ enum { S6SideMain, S6SideLibrary, S6SidePlaylists, S6SideSectionCount };
 @property (nonatomic, strong) NSArray *playlists;      // S6Playlist
 @property (nonatomic) S6Section selected;
 @property (nonatomic, copy) NSString *selectedPlaylist;
-@property (nonatomic, strong) S6APITask *playlistsTask;
+@property (nonatomic) NSUInteger playlistsGeneration;
 @property (nonatomic, copy) NSString *loadedFor;       // the user whose playlists are shown
 @end
 
@@ -200,51 +200,32 @@ enum { S6SideMain, S6SideLibrary, S6SidePlaylists, S6SideSectionCount };
 
 - (void)loadProfile
 {
-    [S6WebAPI get:@"/me" completion:^(id json, NSError *error) {
-        NSDictionary *me = S6Dict(json);
-        if (!me) return;
-        NSString *name = S6Str(me[@"display_name"]);
-        if (name.length) self.nameLabel.text = [S6Utils displayText:name];
-        NSString *image = [S6Image urlIn:me[@"images"] forSize:80];
-        if (image) [self.avatar setImageURL:image placeholder:[[S6Theme shared] artistPlaceholderWithSize:34]];
+    __weak S6SidebarViewController *weakSelf = self;
+    [S6Catalog profile:^(NSString *name, NSString *imageURL) {
+        if (name.length) weakSelf.nameLabel.text = [S6Utils displayText:name];
+        if (imageURL) [weakSelf.avatar setImageURL:imageURL placeholder:[[S6Theme shared] artistPlaceholderWithSize:34]];
     }];
 }
 
 - (void)reloadPlaylists
 {
     if (![S6Settings hasAccount]) return;
-    [self.playlistsTask cancel];
-    __weak S6SidebarViewController *weakSelf = self;
-    // (the first 200 are plenty for a sidebar; the Playlists screen has them all)
-    self.playlistsTask = [S6WebAPI get:@"/me/playlists?limit=50" completion:^(id json, NSError *error) {
-        if (error) return;
-        NSMutableArray *list = [NSMutableArray array];
-        for (id item in S6Arr(S6Dict(json)[@"items"])) {
-            S6Playlist *p = [S6Playlist playlistFromJSON:item];
-            if (p.playlistId.length) [list addObject:p];
-        }
-        weakSelf.playlists = list;
-        [weakSelf.table reloadData];
-        NSString *next = S6Str(S6Dict(json)[@"next"]);
-        if (next.length) [weakSelf loadMorePlaylists:next];
-    }];
+    NSUInteger generation = ++self.playlistsGeneration;
+    [self loadPlaylistsFrom:0 into:[NSMutableArray array] generation:generation];
 }
 
-- (void)loadMorePlaylists:(NSString *)next
+// (the first 200 are plenty for a sidebar; the Playlists screen has them all)
+- (void)loadPlaylistsFrom:(NSInteger)offset into:(NSMutableArray *)list generation:(NSUInteger)generation
 {
-    if (self.playlists.count >= 200) return;
     __weak S6SidebarViewController *weakSelf = self;
-    self.playlistsTask = [S6WebAPI get:next completion:^(id json, NSError *error) {
-        if (error) return;
-        NSMutableArray *list = [weakSelf.playlists mutableCopy];
-        for (id item in S6Arr(S6Dict(json)[@"items"])) {
-            S6Playlist *p = [S6Playlist playlistFromJSON:item];
-            if (p.playlistId.length) [list addObject:p];
-        }
-        weakSelf.playlists = list;
-        [weakSelf.table reloadData];
-        NSString *more = S6Str(S6Dict(json)[@"next"]);
-        if (more.length) [weakSelf loadMorePlaylists:more];
+    [S6Catalog library:@"Playlists" offset:offset limit:50 completion:^(NSArray *items, NSInteger total, NSError *error) {
+        S6SidebarViewController *me = weakSelf;
+        if (!me || generation != me.playlistsGeneration || error) return;
+        for (id item in items) if ([item isKindOfClass:[S6Playlist class]]) [list addObject:item];
+        me.playlists = [list copy];
+        [me.table reloadData];
+        NSInteger next = offset + (NSInteger)items.count;
+        if (items.count && next < MIN(total, 200)) [me loadPlaylistsFrom:next into:list generation:generation];
     }];
 }
 

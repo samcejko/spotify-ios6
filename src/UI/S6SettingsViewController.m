@@ -4,7 +4,7 @@
 #import "S6Zeroconf.h"
 #import "S6Settings.h"
 #import "S6Player.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
 #import "S6Theme.h"
@@ -196,8 +196,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
         [self.tableView reloadData];
     }];
     if (!self.displayName && [S6Session shared].state == S6SessionStateReady) {
-        [S6WebAPI get:@"/me" completion:^(id json, NSError *error) {
-            NSString *name = S6Str(S6Dict(json)[@"display_name"]);
+        [S6Catalog profile:^(NSString *name, NSString *imageURL) {
             if (name.length) { self.displayName = [S6Utils displayText:name]; [self.tableView reloadData]; }
         }];
     }

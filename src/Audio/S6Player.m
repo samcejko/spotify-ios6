@@ -2,7 +2,7 @@
 #import "S6PlaybackEngine.h"
 #import "S6Models.h"
 #import "S6SpClient.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6ImageLoader.h"
 #import "S6Settings.h"
 #import "S6Common.h"
@@ -340,17 +340,11 @@ static void S6Shuffle(NSMutableArray *a)
         [S6SpClient radioForURI:seed.uri completion:^(NSArray *uris, NSError *error) {
             self->_fetchingRadio = NO;
             if (!uris.count) { self.playing = NO; [self changed]; return; }
-            NSMutableArray *ids = [NSMutableArray array];
-            for (NSString *u in uris) {
-                NSString *i = S6URIId(u);
-                if (i.length && ![i isEqualToString:seed.trackId] && ids.count < 50) [ids addObject:i];
-            }
-            [S6WebAPI get:[NSString stringWithFormat:@"/tracks?ids=%@", [ids componentsJoinedByString:@","]] completion:^(id json, NSError *e) {
+            NSMutableArray *list = [NSMutableArray array];
+            for (NSString *u in uris) if (list.count < 50 && ![u isEqualToString:seed.uri]) [list addObject:u];
+            [S6Catalog tracksForURIs:list completion:^(NSArray *found, NSError *e) {
                 NSMutableArray *tracks = [NSMutableArray array];
-                for (id t in S6Arr(S6Dict(json)[@"tracks"])) {
-                    S6Track *track = [S6Track trackFromJSON:t];
-                    if (track.uri.length) [tracks addObject:track];
-                }
+                for (S6Track *track in found) if (track.uri.length && track.playable) [tracks addObject:track];
                 if (!tracks.count) { self.playing = NO; [self changed]; return; }
                 [self playTracks:tracks startingAt:0 contextURI:[@"spotify:radio:" stringByAppendingString:seed.trackId ?: @""]
                      contextName:[NSString stringWithFormat:L(@"%@ Radio"), seed.name]];

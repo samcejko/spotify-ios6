@@ -4,13 +4,13 @@
 #import "S6Router.h"
 #import "S6Theme.h"
 #import "S6Models.h"
-#import "S6WebAPI.h"
+#import "S6Catalog.h"
 #import "S6Player.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
 #import "S6Common.h"
 
-enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6ArtistRelated, S6ArtistSectionCount };
+enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6ArtistPlaylists, S6ArtistRelated, S6ArtistSectionCount };
 
 @interface S6ArtistViewController ()
 @property (nonatomic, strong) S6Artist *artist;
@@ -18,11 +18,10 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
 @property (nonatomic, strong) NSArray *albums;
 @property (nonatomic, strong) NSArray *singles;
 @property (nonatomic, strong) NSArray *appearsOn;
+@property (nonatomic, strong) NSArray *playlists;
 @property (nonatomic, strong) NSArray *related;
 @property (nonatomic) BOOL showAllPopular;
 @property (nonatomic) BOOL following;
-@property (nonatomic) NSInteger pending;
-@property (nonatomic, strong) NSError *error;
 @property (nonatomic, strong) UIView *header;
 @property (nonatomic, strong) S6ImageView *picture;
 @property (nonatomic, strong) UILabel *nameLabel;
@@ -41,6 +40,7 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
         _albums = @[];
         _singles = @[];
         _appearsOn = @[];
+        _playlists = @[];
         _related = @[];
     }
     return self;
@@ -86,8 +86,8 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
     self.title = self.artist.name;
     self.nameLabel.text = [S6Utils displayText:self.artist.name];
     NSMutableArray *bits = [NSMutableArray array];
+    if (self.artist.monthlyListeners) [bits addObject:[NSString stringWithFormat:L(@"%@ monthly listeners"), [S6Utils formatCount:self.artist.monthlyListeners]]];
     if (self.artist.followers) [bits addObject:[NSString stringWithFormat:L(@"%@ followers"), [S6Utils formatCount:self.artist.followers]]];
-    if (self.artist.genres.count) [bits addObject:[[self.artist.genres subarrayWithRange:NSMakeRange(0, MIN((NSUInteger)3, self.artist.genres.count))] componentsJoinedByString:@", "]];
     self.infoLabel.text = [bits componentsJoinedByString:@" · "];
     [self.picture setImageURL:[self.artist imageURLForSize:400] placeholder:[theme artistPlaceholderWithSize:150]];
     [self.followButton setTitle:[(self.following ? L(@"Following") : L(@"Follow")) uppercaseString] forState:UIControlStateNormal];
@@ -114,54 +114,24 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
 - (void)load
 {
     [self startLoading];
-    NSString *aid = self.artist.artistId;
-    self.pending = 5;
-    self.error = nil;
     __weak S6ArtistViewController *weakSelf = self;
-    [S6WebAPI get:[@"/artists/" stringByAppendingString:aid] completion:^(id json, NSError *error) {
-        S6Artist *a = error ? nil : [S6Artist artistFromJSON:json];
-        if (a) weakSelf.artist = a;
-        [weakSelf part:error];
-    }];
-    [S6WebAPI get:[NSString stringWithFormat:@"/artists/%@/top-tracks?market=from_token", aid] completion:^(id json, NSError *error) {
-        NSMutableArray *tracks = [NSMutableArray array];
-        for (id t in S6Arr(S6Dict(json)[@"tracks"])) { S6Track *x = [S6Track trackFromJSON:t]; if (x.uri.length) [tracks addObject:x]; }
-        weakSelf.topTracks = tracks;
-        [weakSelf part:error];
-    }];
-    [S6WebAPI get:[NSString stringWithFormat:@"/artists/%@/albums?include_groups=album,single,appears_on&limit=50&market=from_token", aid] completion:^(id json, NSError *error) {
-        NSMutableArray *albums = [NSMutableArray array], *singles = [NSMutableArray array], *appears = [NSMutableArray array];
-        for (id item in S6Arr(S6Dict(json)[@"items"])) {
-            S6Album *a = [S6Album albumFromJSON:item];
-            NSString *group = S6Str(S6Dict(item)[@"album_group"]) ?: a.albumType;
-            if ([group isEqualToString:@"appears_on"]) [appears addObject:a];
-            else if ([group isEqualToString:@"single"]) [singles addObject:a];
-            else [albums addObject:a];
+    [S6Catalog artist:self.artist.uri completion:^(S6ArtistPage *page, NSError *error) {
+        S6ArtistViewController *me = weakSelf;
+        if (!me) return;
+        if (page) {
+            me.artist = page.artist;
+            me.following = page.artist.saved;
+            me.topTracks = page.topTracks ?: @[];
+            me.albums = [(page.albums ?: @[]) arrayByAddingObjectsFromArray:page.compilations ?: @[]];
+            me.singles = page.singles ?: @[];
+            me.appearsOn = page.appearsOn ?: @[];
+            me.playlists = page.playlists ?: @[];
+            me.related = page.related ?: @[];
         }
-        weakSelf.albums = albums;
-        weakSelf.singles = singles;
-        weakSelf.appearsOn = appears;
-        [weakSelf part:nil];
+        BOOL empty = !me.topTracks.count && !me.albums.count && !me.singles.count;
+        [me finishLoadingWithError:empty ? error : nil empty:empty emptyMessage:L(@"Nothing here.")];
+        [me showHeader];
     }];
-    [S6WebAPI get:[NSString stringWithFormat:@"/artists/%@/related-artists", aid] completion:^(id json, NSError *error) {
-        NSMutableArray *artists = [NSMutableArray array];
-        for (id a in S6Arr(S6Dict(json)[@"artists"])) { S6Artist *x = [S6Artist artistFromJSON:a]; if (x) [artists addObject:x]; }
-        weakSelf.related = artists;
-        [weakSelf part:nil];
-    }];
-    [S6WebAPI get:[@"/me/following/contains?type=artist&ids=" stringByAppendingString:aid] completion:^(id json, NSError *error) {
-        weakSelf.following = S6Bool(S6Arr(json).firstObject);
-        [weakSelf part:nil];
-    }];
-}
-
-- (void)part:(NSError *)error
-{
-    if (error && !self.error) self.error = error;
-    if (--self.pending > 0) { [self.tableView reloadData]; [self showHeader]; return; }
-    BOOL empty = !self.topTracks.count && !self.albums.count && !self.singles.count;
-    [self finishLoadingWithError:empty ? self.error : nil empty:empty emptyMessage:L(@"Nothing here.")];
-    [self showHeader];
 }
 
 - (void)playTop
@@ -172,10 +142,14 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
 - (void)toggleFollow
 {
     BOOL follow = !self.following;
-    [S6WebAPI setArtist:self.artist.artistId followed:follow completion:^(NSError *error) {
-        if (error) { [S6Router toast:error.localizedDescription]; return; }
-        self.following = follow;
-        [self showHeader];
+    self.following = follow;
+    [self showHeader];
+    __weak S6ArtistViewController *weakSelf = self;
+    [S6Catalog setSaved:follow uris:@[ self.artist.uri ?: @"" ] completion:^(NSError *error) {
+        if (!error) return;
+        [S6Router toast:error.localizedDescription];
+        weakSelf.following = !follow;
+        [weakSelf showHeader];
     }];
 }
 
@@ -200,13 +174,14 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
             return n;
         }
         case S6ArtistRelated: return self.related.count ? 1 : 0;
-        default: return (NSInteger)[self albumsIn:section].count;
+        case S6ArtistPlaylists: return self.playlists.count ? 1 : 0;
+        default: return (NSInteger)MIN((NSUInteger)20, [self albumsIn:section].count);
     }
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (indexPath.section == S6ArtistRelated) return [S6ShelfCell heightForCardWidth:S6IsPad() ? 130 : 100];
+    if (indexPath.section == S6ArtistRelated || indexPath.section == S6ArtistPlaylists) return [S6ShelfCell heightForCardWidth:S6IsPad() ? 130 : 100];
     if (indexPath.section == S6ArtistPopular) return 56;
     return 68;
 }
@@ -218,6 +193,7 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
         case S6ArtistAlbums: return L(@"Albums");
         case S6ArtistSingles: return L(@"Singles and EPs");
         case S6ArtistAppears: return L(@"Appears on");
+        case S6ArtistPlaylists: return L(@"Featuring");
         default: return L(@"Fans also like");
     }
 }
@@ -253,20 +229,23 @@ enum { S6ArtistPopular, S6ArtistAlbums, S6ArtistSingles, S6ArtistAppears, S6Arti
         cell.moreButton.tag = indexPath.row;
         return cell;
     }
-    if (indexPath.section == S6ArtistRelated) {
+    if (indexPath.section == S6ArtistRelated || indexPath.section == S6ArtistPlaylists) {
         S6ShelfCell *cell = [tableView dequeueReusableCellWithIdentifier:@"shelf" forIndexPath:indexPath];
         NSMutableArray *items = [NSMutableArray array];
-        for (S6Artist *a in self.related) {
-            [items addObject:@{ @"title": a.name ?: @"", @"subtitle": L(@"Artist"), @"image": [a imageURLForSize:260] ?: @"", @"round": @YES, @"item": a }];
+        for (id x in indexPath.section == S6ArtistRelated ? self.related : self.playlists) {
+            NSDictionary *card = S6CardFor(x);
+            if (card) [items addObject:card];
         }
         [cell showItems:items cardWidth:S6IsPad() ? 130 : 100];
-        cell.onSelect = ^(id item) { [S6Router openArtist:item]; };
+        cell.onSelect = ^(id item) { [S6Router openItem:item]; };
         return cell;
     }
     S6MediaCell *cell = [tableView dequeueReusableCellWithIdentifier:@"media" forIndexPath:indexPath];
     S6Album *a = [self albumsIn:indexPath.section][(NSUInteger)indexPath.row];
     cell.round = NO;
-    NSString *sub = indexPath.section == S6ArtistAppears ? [a artistNames] : [NSString stringWithFormat:@"%@ · %@", [a year], a.totalTracks == 1 ? L(@"Single") : [NSString stringWithFormat:L(@"%lu songs"), (unsigned long)a.totalTracks]];
+    NSString *count = a.totalTracks == 1 ? L(@"Single") : a.totalTracks ? [NSString stringWithFormat:L(@"%lu songs"), (unsigned long)a.totalTracks] : @"";
+    NSString *sub = indexPath.section == S6ArtistAppears ? [NSString stringWithFormat:@"%@ · %@", [a year], [a artistNames]] :
+                    count.length ? [NSString stringWithFormat:@"%@ · %@", [a year], count] : [a year];
     [cell showTitle:a.name subtitle:sub imageURL:[a imageURLForSize:120]];
     return cell;
 }
