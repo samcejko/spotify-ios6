@@ -74,6 +74,8 @@ static const NSTimeInterval S6MaxRetryDelay = 60;
         _stateCondition = [[NSCondition alloc] init];
         _retryDelay = 2;
         self.username = [S6Settings username];
+        // (with an account the app starts as connecting: "logged out" would flash the login screen at every launch)
+        self.state = [S6Settings hasAccount] ? S6SessionStateConnecting : S6SessionStateLoggedOut;
     }
     return self;
 }
