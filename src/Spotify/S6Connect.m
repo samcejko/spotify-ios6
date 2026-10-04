@@ -339,7 +339,7 @@ static NSDictionary *S6Provided(S6Track *t, NSString *provider)
         dispatch_async(dispatch_get_main_queue(), ^{ [self handleCluster:payload]; });
     } else if ([uri rangeOfString:@"connect/volume"].location != NSNotFound) {
         dispatch_async(dispatch_get_main_queue(), ^{ [self handleVolume:payload]; });
-    } else if ([uri rangeOfString:@"connect/logout"].location == NSNotFound) {
+    } else if ([uri rangeOfString:@"connect/logout"].location == NSNotFound && [uri rangeOfString:@"social-connect"].location == NSNotFound) {
         S6Log(@"connect: message %@", uri);
     }
 }
@@ -399,8 +399,9 @@ static NSDictionary *S6Provided(S6Track *t, NSString *provider)
     NSString *endpoint = S6Str(cmd[@"endpoint"]) ?: @"";
     _lastCommandMessageId = (uint32_t)S6Int(request[@"message_id"]);
     _lastCommandSender = S6Str(request[@"sent_by_device_id"]);
-    if (_lastCommandSender.length) self.controller = [self nameOfDevice:_lastCommandSender] ?: self.controller;
-    [self event:[NSString stringWithFormat:@"command %@ from %@", endpoint, self.controller ?: _lastCommandSender ?: @"?"]];
+    NSString *sender = _lastCommandSender.length ? [self nameOfDevice:_lastCommandSender] : nil;
+    if (sender.length) self.controller = sender;
+    [self event:[NSString stringWithFormat:@"command %@ from %@", endpoint, sender ?: _lastCommandSender ?: @"?"]];
     S6Player *p = [S6Player shared];
     if ([endpoint isEqualToString:@"transfer"]) {
         [self transfer:cmd];

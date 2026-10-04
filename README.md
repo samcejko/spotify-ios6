@@ -13,6 +13,9 @@ on the device - no phone needed once you are logged in.
   songs when the music runs out, gapless, normalized volume, quality up to 320 kbit/s (Ogg Vorbis)
 - **Now playing** full screen with big artwork, **synced lyrics**, the queue; the lock screen and the headphone
   remote work, music goes on in the background
+- **Spotify Connect**: Spot6 is in the device list of your Spotify apps (phone, computer) - hand the music over to
+  the iPad from the phone and control it from there (play, pause, skip, seek, shuffle, repeat, queue, volume); music
+  started on the iPad shows on the phone too
 - iPad: a sidebar with your playlists and a player bar along the bottom; iPhone: tabs and a compact player bar
 
 Spot6 is not affiliated with, endorsed by or associated with Spotify. It needs **Spotify Premium**.
@@ -25,8 +28,10 @@ Spot6 is not affiliated with, endorsed by or associated with Spotify. It needs *
 
 This is Spotify Connect's zeroconf login: the phone's Spotify app sends a login meant for this device, encrypted
 for it. Spot6 never sees or stores the password; it keeps only the reusable credentials Spotify hands out (in the
-keychain). Settings - Log out forgets them. (The phone may show that the device could not be connected - Spot6 does
-not act as a Connect speaker, but it is logged in.)
+keychain). Settings - Log out forgets them.
+
+Once logged in, "Spot6 (iPad)" stays in the device list of all your Spotify apps while Spot6 is open (or playing in
+the background): pick it to move the music to the iPad, then use the phone as a remote.
 
 ## How it works
 
@@ -42,6 +47,9 @@ Spot6 talks to Spotify the way librespot does, all on the device:
   its quota.)
 - the audio file from Spotify's CDN, decrypted with AES-128-CTR, decoded by stb_vorbis and played through an
   AudioQueue; the next song is prepared while the current one plays
+- **Spotify Connect** as librespot does it: the "dealer" websocket brings the cluster updates and the commands (gzip
+  JSON), the device and its player state go to the connect-state service (as JSON), a transfer's state is read from
+  its protobuf, contexts are resolved through the spclient
 
 Every HTTPS connection goes through Spot6's own TLS layer (Mbed TLS), since iOS 6 cannot talk to modern servers.
 

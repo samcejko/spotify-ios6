@@ -36,7 +36,7 @@ $section = ''
 if ($changelog -match "(?s)## $([regex]::Escape($Version))[^\n]*\n(.*?)(\n## |\z)") { $section = $Matches[1].Trim() }
 # (ASCII only in this file: Windows PowerShell 5.1 reads a BOM-less script in the ANSI code page)
 $sums = $assets | ForEach-Object { "- ``$($_.Name)`` - SHA-256 ``$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())``" }
-$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Spot6-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. You also need the helper (the `spot6` service) running on your own server (see the repo''s pi/ folder) and its address set in the app''s Settings.' -f $Version
+$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Spot6-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. **Logging in** needs Spotify Premium: open Spot6, then pick "Spot6 (iPad)" in the Spotify app on your phone (same Wi-Fi). Spot6 is an unofficial app, not made by Spotify.' -f $Version
 $notes = ($section, '', $install, '', '**Checksums**', ($sums -join "`n")) -join "`n"
 
 Write-Host "Release $tag of $Repo at $($Sha.Substring(0, [Math]::Min(7, $Sha.Length)))"

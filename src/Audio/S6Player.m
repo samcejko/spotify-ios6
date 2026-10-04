@@ -380,7 +380,7 @@ static void S6Shuffle(NSMutableArray *a)
                 NSMutableArray *tracks = [NSMutableArray array];
                 for (S6Track *track in found) if (track.uri.length && track.playable) [tracks addObject:track];
                 if (!tracks.count) { self.playing = NO; [self changed]; return; }
-                [self playTracks:tracks startingAt:0 contextURI:[@"spotify:radio:" stringByAppendingString:seed.trackId ?: @""]
+                [self playTracks:tracks startingAt:0 contextURI:[@"spotify:station:track:" stringByAppendingString:seed.trackId ?: @""]
                      contextName:[NSString stringWithFormat:L(@"%@ Radio"), seed.name]];
             }];
         }];

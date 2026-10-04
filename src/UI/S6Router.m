@@ -165,7 +165,7 @@
             NSMutableArray *tracks = [NSMutableArray arrayWithObject:track];
             for (S6Track *x in found) if (x.uri.length && ![x.uri isEqualToString:track.uri]) [tracks addObject:x];
             if (tracks.count < 2) { [self toast:e.localizedDescription ?: L(@"No radio for this.")]; return; }
-            [[S6Player shared] playTracks:tracks startingAt:0 contextURI:[@"spotify:radio:" stringByAppendingString:track.trackId ?: @""]
+            [[S6Player shared] playTracks:tracks startingAt:0 contextURI:[@"spotify:station:track:" stringByAppendingString:track.trackId ?: @""]
                               contextName:[NSString stringWithFormat:L(@"%@ Radio"), track.name]];
         }];
     }];

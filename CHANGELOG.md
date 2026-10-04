@@ -10,4 +10,6 @@
 - Playback of Ogg Vorbis up to 320 kbit/s: decryption, decoding, gapless, normalization, queue, shuffle, repeat,
   song radio, autoplay, lock screen and remote controls
 - Now playing with synced lyrics and the queue; iPad sidebar with your playlists and a player bar, iPhone tabs
+- Spotify Connect: the device in the account's device list; playback handed over from the phone or computer and
+  controlled from there (play, pause, skip, seek, shuffle, repeat, queue, volume); music started here shows there
 - English and Czech
