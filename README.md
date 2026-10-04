@@ -34,10 +34,12 @@ Spot6 talks to Spotify the way librespot does, all on the device:
 
 - the **access point** connection (Diffie-Hellman, the server's RSA signature, the Shannon stream cipher) for the
   login, the account's country and product, the audio file keys and Mercury requests
-- **login5** and the **client token** (with Spotify's hash-cash puzzles) for the access token, keymaster for the
-  Web API token
-- the **Web API** (api.spotify.com) for browsing and the library, the **spclient** for track metadata, the audio file
-  locations, lyrics and radio
+- **login5** and the **client token** (with Spotify's hash-cash puzzles) for the access token
+- Spotify's own **GraphQL API** (api-partner.spotify.com/pathfinder, the one the desktop and web clients use) for
+  Home, search, browsing, album / artist / playlist / podcast pages, the library, saving and playlist edits; the
+  **spclient** for track metadata, the audio file locations, lyrics, radio and creating playlists. (The public Web API
+  is not used: it answers librespot's client id with "API rate limit exceeded", as every librespot-based app shares
+  its quota.)
 - the audio file from Spotify's CDN, decrypted with AES-128-CTR, decoded by stb_vorbis and played through an
   AudioQueue; the next song is prepared while the current one plays
 
