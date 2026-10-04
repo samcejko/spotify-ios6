@@ -57,7 +57,9 @@ static BOOL S6PressView(UIView *v, NSString *text)
         [delegate tableView:(UITableView *)table didSelectRowAtIndexPath:ip];
         return YES;
     }
-    if ([v isKindOfClass:[UIControl class]] && [v.accessibilityLabel rangeOfString:text options:NSCaseInsensitiveSearch].location != NSNotFound) {
+    // (a control without a label must not match: a message to nil answers location 0)
+    if ([v isKindOfClass:[UIControl class]] && v.accessibilityLabel.length &&
+        [v.accessibilityLabel rangeOfString:text options:NSCaseInsensitiveSearch].location != NSNotFound) {
         [(UIControl *)v sendActionsForControlEvents:UIControlEventTouchUpInside];
         return YES;
     }
