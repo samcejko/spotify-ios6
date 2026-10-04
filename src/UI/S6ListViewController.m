@@ -104,10 +104,14 @@
 - (void)playerChanged
 {
     if (!self.isViewLoaded || !self.view.window) return;
-    for (UITableViewCell *cell in self.tableView.visibleCells) {
+    // (the rows first, reloaded afterwards in one go: on iOS 6 visibleCells is the table's own array, and reloading
+    // a row while going through it throws "mutated while being enumerated")
+    NSMutableArray *rows = [NSMutableArray array];
+    for (UITableViewCell *cell in [self.tableView.visibleCells copy]) {
         NSIndexPath *ip = [self.tableView indexPathForCell:cell];
-        if (ip && [cell respondsToSelector:@selector(showTrack:number:)]) [self.tableView reloadRowsAtIndexPaths:@[ ip ] withRowAnimation:UITableViewRowAnimationNone];
+        if (ip && [cell respondsToSelector:@selector(showTrack:number:)]) [rows addObject:ip];
     }
+    if (rows.count) [self.tableView reloadRowsAtIndexPaths:rows withRowAnimation:UITableViewRowAnimationNone];
 }
 
 @end
