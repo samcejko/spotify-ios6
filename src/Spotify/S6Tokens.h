@@ -25,5 +25,6 @@ NSData *S6SyncRequest(NSString *method, NSString *url, NSDictionary *headers, NS
 - (void)reset;                     // logged out
 
 - (NSString *)debugState;
+- (void)debugTokenTest;            // logs which client ids get tokens and how the Web API answers them
 
 @end

@@ -5,6 +5,8 @@
 #import "S6Router.h"
 #import "S6Session.h"
 #import "S6Tokens.h"
+#import "S6Pathfinder.h"
+#import "S6SpClient.h"
 #import "S6Zeroconf.h"
 #import "S6WebAPI.h"
 #import "S6Models.h"
@@ -146,6 +148,40 @@ static BOOL S6PressView(UIView *v, NSString *text)
         return YES;
     }
     if ([target isEqualToString:@"aptest"]) { [[S6Session shared] debugHandshakeTest]; return YES; }
+    if ([target isEqualToString:@"tokentest"]) { [[S6Tokens shared] debugTokenTest]; return YES; }
+    // gql?op=<operation>&vars=<JSON>[&hash=][&plat=]: one GraphQL query, the answer saved to tmp/gql-<op>.json
+    if ([target isEqualToString:@"gql"]) {
+        NSString *op = params[@"op"] ?: @"";
+        NSString *hash = params[@"hash"] ?: [S6Pathfinder hashFor:op];
+        NSString *varsText = params[@"vars"];
+        id vars = varsText.length ? [S6Utils JSONObjectFromData:[varsText dataUsingEncoding:NSUTF8StringEncoding]] : @{};
+        NSString *plat = params[@"plat"];
+        if (!vars) { S6Log(@"gql %@: the variables are not JSON", op); return YES; }
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSInteger status = 0;
+            NSError *e = nil;
+            NSData *data = [S6Pathfinder rawQuery:op hash:hash variables:vars platform:plat status:&status error:&e];
+            NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"gql-%@.json", op]];
+            [data ?: [NSData data] writeToFile:path atomically:YES];
+            NSString *text = data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : e.localizedDescription;
+            S6Log(@"gql %@: HTTP %ld, %lu bytes | %@", op, (long)status, (unsigned long)data.length, [S6Utils truncate:text ?: @"" to:200]);
+        });
+        return YES;
+    }
+    // sp?path=<spclient path>&out=<name>: one spclient GET, the answer saved to tmp/sp-<name>.json
+    if ([target isEqualToString:@"sp"] && [params[@"path"] length]) {
+        NSString *path = params[@"path"];
+        NSString *name = params[@"out"] ?: @"out";
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSInteger status = 0;
+            NSError *e = nil;
+            NSData *data = [S6SpClient request:@"GET" path:path body:nil contentType:nil accept:@"application/json" status:&status error:&e];
+            NSString *file = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"sp-%@.json", name]];
+            [data ?: [NSData data] writeToFile:file atomically:YES];
+            S6Log(@"sp %@: HTTP %ld, %lu bytes%@", path, (long)status, (unsigned long)data.length, e ? [@" " stringByAppendingString:e.localizedDescription] : @"");
+        });
+        return YES;
+    }
     // lang?set=en|cs|system: the app's own language, for checking both (the device's stays); it applies from the next
     // launch, so the app quits
     if ([target isEqualToString:@"lang"]) {
@@ -219,11 +255,14 @@ static BOOL S6PressView(UIView *v, NSString *text)
         NSString *uri = params[@"uri"];
         NSString *trackId = [S6URIType(uri) isEqualToString:@"track"] ? S6URIId(uri) : nil;
         if (!trackId.length) { [S6Router openURI:uri]; return YES; }
-        [S6WebAPI get:[@"/tracks/" stringByAppendingString:trackId] completion:^(id json, NSError *error) {
-            S6Track *t = error ? nil : [S6Track trackFromJSON:json];
-            S6Log(@"Play %@: %@", uri, t ? t.name : error.localizedDescription);
-            if (t) [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:t.uri contextName:t.name];
-        }];
+        // (straight to the engine: the song needs nothing but its id)
+        S6Track *t = [[S6Track alloc] init];
+        t.trackId = trackId;
+        t.uri = uri;
+        t.name = params[@"name"] ?: uri;
+        t.playable = YES;
+        S6Log(@"Play %@", uri);
+        [[S6Player shared] playTracks:@[ t ] startingAt:0 contextURI:uri contextName:t.name];
         return YES;
     }
     if ([target isEqualToString:@"player"]) {

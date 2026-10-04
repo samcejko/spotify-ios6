@@ -308,8 +308,14 @@ static NSDictionary *S6ParseForm(NSString *s)
         [self setEvent:@"the login blob could not be read"];
         return @{ @"status": @102, @"spotifyError": @1, @"statusString": @"ERROR-BLOB" };
     }
+    S6Session *session = [S6Session shared];
+    if (session.state == S6SessionStateReady && session.username.length && [session.username caseInsensitiveCompare:username] == NSOrderedSame) {
+        // (the phone asks again whenever its device list opens: the same account stays as it is)
+        [self setEvent:[NSString stringWithFormat:@"login for %@ arrived, already logged in", username]];
+        return @{ @"status": @101, @"spotifyError": @0, @"statusString": @"OK" };
+    }
     [self setEvent:[NSString stringWithFormat:@"login for %@ arrived, logging in", username]];
-    [[S6Session shared] loginWithUsername:username authType:authType authData:authData];
+    [session loginWithUsername:username authType:authType authData:authData];
     return @{ @"status": @101, @"spotifyError": @0, @"statusString": @"OK" };
 }
 

@@ -126,7 +126,7 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
 
 #pragma mark - Client token
 
-- (NSData *)clientTokenRequestBody
+- (NSData *)clientTokenRequestBodyFor:(NSString *)clientId
 {
     S6ProtoWriter *linux = [S6ProtoWriter writer];
     [linux string:@"Linux" field:1];          // system_name
@@ -140,7 +140,7 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
     [connectivity string:[S6Settings deviceId] field:2];
     S6ProtoWriter *clientData = [S6ProtoWriter writer];
     [clientData string:S6ClientVersion field:1];
-    [clientData string:S6ClientId field:2];
+    [clientData string:clientId field:2];
     [clientData message:connectivity field:3];
     S6ProtoWriter *request = [S6ProtoWriter writer];
     [request varint:1 field:1];               // REQUEST_CLIENT_DATA_REQUEST
@@ -153,9 +153,22 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
     [_lock lock];
     if (_clientToken && [_clientTokenExpiry timeIntervalSinceNow] > 60) { NSString *t = _clientToken; [_lock unlock]; return t; }
     [_lock unlock];
+    int64_t lifetime = 0;
+    NSString *token = [self fetchClientTokenFor:S6ClientId lifetime:&lifetime error:error];
+    if (token) {
+        [_lock lock];
+        _clientToken = token;
+        _clientTokenExpiry = [NSDate dateWithTimeIntervalSinceNow:lifetime > 0 ? lifetime : 7200];
+        [_lock unlock];
+    }
+    return token;
+}
 
+// One client token from Spotify, after its hash cash puzzle when it sets one
+- (NSString *)fetchClientTokenFor:(NSString *)clientId lifetime:(int64_t *)lifetime error:(NSError **)error
+{
     NSDictionary *headers = @{ @"Accept": @"application/x-protobuf", @"Content-Type": @"application/x-protobuf" };
-    NSData *body = [self clientTokenRequestBody];
+    NSData *body = [self clientTokenRequestBodyFor:clientId];
     for (int attempt = 0; attempt < 3; attempt++) {
         NSInteger status = 0;
         NSData *response = S6SyncRequest(@"POST", @"https://clienttoken.spotify.com/v1/clienttoken", headers, body, &status, NULL, error);
@@ -171,10 +184,7 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
             NSString *token = S6ProtoString(granted, 1);
             int64_t refresh = (int64_t)S6ProtoVarint(granted, 3, 7200);
             if (!token.length) break;
-            [_lock lock];
-            _clientToken = token;
-            _clientTokenExpiry = [NSDate dateWithTimeIntervalSinceNow:refresh > 0 ? refresh : 7200];
-            [_lock unlock];
+            if (lifetime) *lifetime = refresh;
             return token;
         }
         if (type == 2) {
@@ -217,9 +227,22 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
     if (![[S6Session shared] waitUntilReady:20 error:error]) return nil;
     NSString *clientToken = [self clientTokenWithError:error];
     if (!clientToken) return nil;
+    int64_t lifetime = 0;
+    NSString *token = [self fetchLogin5TokenFor:S6ClientId clientToken:clientToken lifetime:&lifetime error:error];
+    if (token) {
+        [_lock lock];
+        _accessToken = token;
+        _accessTokenExpiry = [NSDate dateWithTimeIntervalSinceNow:lifetime > 0 ? lifetime : 3600];
+        [_lock unlock];
+    }
+    return token;
+}
 
+// One access token from login5 with the stored credentials, after its hash cash puzzles
+- (NSString *)fetchLogin5TokenFor:(NSString *)clientId clientToken:(NSString *)clientToken lifetime:(int64_t *)lifetime error:(NSError **)error
+{
     S6ProtoWriter *clientInfo = [S6ProtoWriter writer];
-    [clientInfo string:S6ClientId field:1];
+    [clientInfo string:clientId field:1];
     [clientInfo string:[S6Settings deviceId] field:2];
     S6ProtoWriter *stored = [S6ProtoWriter writer];
     [stored string:[S6Settings username] field:1];
@@ -247,10 +270,7 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
             NSString *token = S6ProtoString(ok, 2);
             int64_t expires = (int64_t)S6ProtoVarint(ok, 4, 3600);
             if (!token.length) break;
-            [_lock lock];
-            _accessToken = token;
-            _accessTokenExpiry = [NSDate dateWithTimeIntervalSinceNow:expires > 0 ? expires : 3600];
-            [_lock unlock];
+            if (lifetime) *lifetime = expires;
             return token;
         }
         if (S6ProtoHas(response, 2)) {
@@ -326,6 +346,34 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
         [_lock unlock];
     }
     return token;
+}
+
+// Debug: which client ids login5 hands tokens out for, and what the public Web API says to each (logs only the
+// status and, for errors, the start of the answer)
+- (void)debugTokenTest
+{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSArray *ids = @[ S6ClientId, @"d8a5ed958d274c2e8ee717e6a4b0971d", @"9a8d2f0ce77a4e248bb71fefcb557637", @"58bd3c95768941ea9eb4350aaa033eb3" ];
+        for (NSString *cid in ids) {
+            NSError *e = nil;
+            int64_t life = 0;
+            NSString *ct = [self fetchClientTokenFor:cid lifetime:&life error:&e];
+            if (!ct) { S6Log(@"tokentest %@: client token failed: %@", cid, e.localizedDescription); continue; }
+            NSString *at = [self fetchLogin5TokenFor:cid clientToken:ct lifetime:&life error:&e];
+            if (!at) { S6Log(@"tokentest %@: login5 failed: %@", cid, e.localizedDescription); continue; }
+            for (NSString *url in @[ @"https://api.spotify.com/v1/me", @"https://api.spotify.com/v1/search?q=daft%20punk&type=track&limit=1" ]) {
+                NSInteger status = 0;
+                NSDictionary *h = nil;
+                NSData *body = S6SyncRequest(@"GET", url, @{ @"Authorization": [@"Bearer " stringByAppendingString:at], @"Accept": @"application/json" },
+                                             nil, &status, &h, &e);
+                NSString *text = body ? [[NSString alloc] initWithData:body encoding:NSUTF8StringEncoding] : e.localizedDescription;
+                S6Log(@"tokentest %@: %@ -> %ld, retry-after %@: %@", [cid substringToIndex:6], [url substringFromIndex:26], (long)status,
+                      h[@"retry-after"] ?: @"-", status == 200 ? [NSString stringWithFormat:@"ok (%lu bytes)", (unsigned long)body.length]
+                                                               : [S6Utils truncate:[text stringByReplacingOccurrencesOfString:@"\n" withString:@" "] to:160]);
+            }
+        }
+        S6Log(@"tokentest done");
+    });
 }
 
 - (NSString *)debugState
