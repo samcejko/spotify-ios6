@@ -23,6 +23,7 @@ extern NSString * const S6SessionStateDidChangeNotification;   // on the main th
 @property (atomic, readonly, copy) NSString *country;           // "CZ"
 @property (atomic, readonly, copy) NSDictionary *attributes;    // the product info ("type" = "premium", "image-url"...)
 @property (atomic, readonly, copy) NSString *spclientHost;      // "gew1-spclient.spotify.com:443"
+@property (atomic, readonly, copy) NSString *dealerHost;        // "gew1-dealer.spotify.com:443" (Spotify Connect's push channel)
 @property (nonatomic, readonly) BOOL premium;
 
 - (void)start;                                                 // logs in with the stored account, if there is one

@@ -40,6 +40,7 @@ static const NSTimeInterval S6MaxRetryDelay = 60;
 @property (atomic, copy) NSString *country;
 @property (atomic, copy) NSDictionary *attributes;
 @property (atomic, copy) NSString *spclientHost;
+@property (atomic, copy) NSString *dealerHost;
 @end
 
 @implementation S6Session {
@@ -196,6 +197,8 @@ static const NSTimeInterval S6MaxRetryDelay = 60;
     _apIndex = 0;
     NSString *sp = S6Str(spclients.firstObject);
     self.spclientHost = sp.length ? sp : @"spclient.wg.spotify.com:443";
+    NSString *dealer = S6Str(S6Arr(json[@"dealer"]).firstObject);
+    self.dealerHost = dealer.length ? dealer : @"dealer.spotify.com:443";
     S6Log(@"apresolve: %lu access points (%@ first), spclient %@%@", (unsigned long)_accessPoints.count, _accessPoints.firstObject,
           self.spclientHost, failure ? [NSString stringWithFormat:@" (fallback: %@)", failure.localizedDescription] : @"");
 }

@@ -22,5 +22,6 @@
 @property (atomic, readonly) BOOL running;
 @property (atomic, readonly) double sampleRate;
 @property (atomic) BOOL underrun;                       // the queue ran dry since this was last cleared
+@property (nonatomic) float volume;                     // 0...1, the app's own (Spotify Connect's volume); default 1
 
 @end

@@ -107,6 +107,7 @@
 "Play next" = "Přehrát jako další";
 "Playback" = "Přehrávání";
 "Playing from" = "Hraje z";
+"Playing here" = "Hraje tady";
 "Playlist" = "Playlist";
 "Playlist name" = "Název playlistu";
 "Playlists" = "Playlisty";
@@ -150,6 +151,7 @@
 "Spotify answered with error %ld." = "Spotify odpovědělo chybou %ld.";
 "Spotify asked to try another server." = "Spotify požádalo o jiný server.";
 "Spotify cannot be reached." = "Spotify není dostupné.";
+"Spotify Connect" = "Spotify Connect";
 "Spotify did not accept the access token." = "Spotify nepřijalo přístupový token.";
 "Spotify did not accept the login." = "Spotify nepřijalo přihlášení.";
 "Spotify did not accept the login. Log in again from the Spotify app." = "Spotify nepřijalo přihlášení. Přihlas se znovu z aplikace Spotify.";
@@ -175,7 +177,7 @@
 "The connection to Spotify could not be secured." = "Spojení se Spotify nešlo zabezpečit.";
 "The connection to Spotify was closed." = "Spojení se Spotify bylo ukončeno.";
 "The download broke off." = "Stahování se přerušilo.";
-"The name you pick in the Spotify app on your phone to log in. While Spot6 is open, your phone can see it on the same Wi-Fi." = "Název, který vybereš v aplikaci Spotify v telefonu, když se chceš přihlásit. Dokud je Spot6 otevřený, telefon ho na stejné Wi-Fi vidí.";
+"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Spot6 is open, your devices can see it." = "Název tohoto zařízení v aplikacích Spotify tvého účtu: vyber ho v telefonu, když se chceš přihlásit, pustit hudbu sem nebo ovládat, co tu hraje (Spotify Connect). Dokud je Spot6 otevřený, tvoje zařízení ho vidí.";
 "The playlist could not be created." = "Playlist nešlo vytvořit.";
 "The server closed the connection without responding." = "Server ukončil spojení bez odpovědi.";
 "The server could not prove that it is Spotify." = "Server nedokázal, že je to Spotify.";
@@ -205,6 +207,7 @@
 "Version" = "Verze";
 "Very high" = "Velmi vysoká";
 "Visible on Wi-Fi" = "Viditelné na Wi-Fi";
+"Visible to your devices" = "Viditelné pro tvoje zařízení";
 "Waiting for your phone… (look for “%@”)" = "Čekám na telefon… (hledej „%@“)";
 "yesterday" = "včera";
 "You are not logged in." = "Není přihlášen žádný účet.";

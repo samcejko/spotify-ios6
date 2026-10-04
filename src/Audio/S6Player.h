@@ -20,6 +20,9 @@ extern NSString * const S6PlayerDidFailNotification;        // userInfo[@"error"
 + (instancetype)shared;
 
 - (void)playTracks:(NSArray *)tracks startingAt:(NSUInteger)index contextURI:(NSString *)uri contextName:(NSString *)name;
+// The same from a position, possibly paused (playback handed over from another device)
+- (void)playTracks:(NSArray *)tracks startingAt:(NSUInteger)index positionMs:(NSInteger)positionMs paused:(BOOL)paused
+        contextURI:(NSString *)uri contextName:(NSString *)name;
 - (void)playTracksShuffled:(NSArray *)tracks contextURI:(NSString *)uri contextName:(NSString *)name;
 - (void)addToQueue:(S6Track *)track;
 - (void)playNext:(S6Track *)track;                 // first in the queue
@@ -45,8 +48,12 @@ extern NSString * const S6PlayerDidFailNotification;        // userInfo[@"error"
 
 @property (nonatomic, readonly) NSArray *userQueue;        // S6Track, "Next in queue"
 - (NSArray *)upcomingTracks:(NSUInteger)max;               // "Next from <context>"
+- (NSArray *)previousTracks:(NSUInteger)max;               // the context's songs before the current one, in play order
 - (void)removeFromQueueAtIndex:(NSUInteger)index;
 - (void)clearQueue;
+- (void)replaceQueue:(NSArray *)tracks;
+@property (nonatomic, readonly) NSArray *contextTracks;    // the context in its own order
+@property (nonatomic, readonly) NSInteger contextIndex;    // the current song's place in it (-1: from the queue / none)
 
 - (void)handleRemoteEvent:(UIEvent *)event;              // from the app delegate
 - (NSString *)debugState;

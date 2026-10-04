@@ -101,18 +101,49 @@ static void S6Shuffle(NSMutableArray *a)
 
 - (void)playTracks:(NSArray *)tracks startingAt:(NSUInteger)index contextURI:(NSString *)uri contextName:(NSString *)name
 {
+    [self playTracks:tracks startingAt:index positionMs:0 paused:NO contextURI:uri contextName:name];
+}
+
+- (void)playTracks:(NSArray *)tracks startingAt:(NSUInteger)index positionMs:(NSInteger)positionMs paused:(BOOL)paused
+        contextURI:(NSString *)uri contextName:(NSString *)name
+{
     if (!tracks.count) return;
     _contextTracks = [tracks copy];
     self.contextURI = uri;
     self.contextName = name;
     NSInteger start = (NSInteger)MIN(index, tracks.count - 1);
     // (a song that cannot play is passed over)
+    if (![tracks[(NSUInteger)start] playable]) positionMs = 0;
     while (start < (NSInteger)tracks.count && ![tracks[(NSUInteger)start] playable]) start++;
     if (start >= (NSInteger)tracks.count) return;
     [self buildOrderStartingWith:start];
     _currentFromQueue = NO;
     _failures = 0;
-    [self loadAndPlay:tracks[(NSUInteger)start]];
+    [self loadAndPlay:tracks[(NSUInteger)start] fromMs:positionMs paused:paused];
+}
+
+- (NSArray *)contextTracks { return _contextTracks ?: @[]; }
+
+- (NSInteger)contextIndex
+{
+    return (_orderPos >= 0 && _orderPos < (NSInteger)_order.count && !_currentFromQueue) ? [_order[(NSUInteger)_orderPos] integerValue] : -1;
+}
+
+- (NSArray *)previousTracks:(NSUInteger)max
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSInteger p = MAX(0, _orderPos - (NSInteger)max); p < _orderPos && p < (NSInteger)_order.count; p++) {
+        [out addObject:_contextTracks[[_order[(NSUInteger)p] unsignedIntegerValue]]];
+    }
+    return out;
+}
+
+- (void)replaceQueue:(NSArray *)tracks
+{
+    [self.queue removeAllObjects];
+    [self.queue addObjectsFromArray:tracks ?: @[]];
+    [self dropPrepared];
+    [self changed];
 }
 
 - (void)playTracksShuffled:(NSArray *)tracks contextURI:(NSString *)uri contextName:(NSString *)name
@@ -200,13 +231,15 @@ static void S6Shuffle(NSMutableArray *a)
 
 #pragma mark - Loading
 
-- (void)loadAndPlay:(S6Track *)track
+- (void)loadAndPlay:(S6Track *)track { [self loadAndPlay:track fromMs:0 paused:NO]; }
+
+- (void)loadAndPlay:(S6Track *)track fromMs:(NSInteger)startMs paused:(BOOL)paused
 {
     NSUInteger token = ++_loadToken;
     [self dropPrepared];
     self.currentTrack = track;
     self.loading = YES;
-    self.playing = YES;
+    self.playing = !paused;
     [_engine stop];
     [self changed];
     S6Quality quality = [S6Settings quality];
@@ -221,7 +254,8 @@ static void S6Shuffle(NSMutableArray *a)
                 return;
             }
             self->_failures = 0;
-            [self->_engine playItem:item fromMs:0 paused:!self.playing];
+            NSInteger from = item.durationMs > 0 && startMs >= item.durationMs ? 0 : MAX(0, startMs);
+            [self->_engine playItem:item fromMs:from paused:!self.playing];
         });
     });
 }

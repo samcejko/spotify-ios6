@@ -1,6 +1,6 @@
 # Waits for the latest GitHub Actions run, prints errors on failure, downloads the packages on success
 # and optionally installs them on the iPad over SSH.
-# Usage: .\tools\gh-build.ps1 [-Repo owner/name] [-Token ghp_xxx] [-Trigger] [-Download] [-Install] [-IPadHost 192.168.137.17]
+# Usage: .\tools\gh-build.ps1 [-Repo owner/name] [-Token ghp_xxx] [-Trigger] [-Download] [-Install] [-IPadHost <address>] [-HeadSha <commit>]
 # Repo, token and iPad address default to tools/local.json.
 param(
     [string]$Repo = '',
@@ -25,7 +25,7 @@ if (Test-Path $localCfg) {
     if (-not $Token -and $cfg.token) { $Token = $cfg.token }
     if (-not $IPadHost -and $cfg.ipad) { $IPadHost = $cfg.ipad }
 }
-if (-not $IPadHost) { $IPadHost = '192.168.137.17' }
+if ($Install -and -not $IPadHost) { throw "Missing iPad address: pass -IPadHost or set `"ipad`" in tools/local.json" }
 if (-not $Repo) { throw "Missing repo: pass -Repo or set it in tools/local.json" }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 if (-not $Token) { throw "Missing token: pass -Token or set GH_TOKEN" }

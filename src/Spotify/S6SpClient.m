@@ -19,10 +19,16 @@
 + (NSData *)request:(NSString *)method path:(NSString *)path body:(NSData *)body contentType:(NSString *)contentType
              accept:(NSString *)accept status:(NSInteger *)status error:(NSError **)error
 {
+    return [self request:method path:path body:body contentType:contentType accept:accept headers:nil status:status error:error];
+}
+
++ (NSData *)request:(NSString *)method path:(NSString *)path body:(NSData *)body contentType:(NSString *)contentType
+             accept:(NSString *)accept headers:(NSDictionary *)extraHeaders status:(NSInteger *)status error:(NSError **)error
+{
     S6Session *session = [S6Session shared];
     if (![session waitUntilReady:20 error:error]) return nil;
     NSMutableString *url = [NSMutableString stringWithFormat:@"https://%@%@", session.spclientHost ?: @"spclient.wg.spotify.com:443", path];
-    if ([path rangeOfString:@"context-resolve"].location == NSNotFound) {
+    if ([path rangeOfString:@"context-resolve"].location == NSNotFound && [path rangeOfString:@"connect-state"].location == NSNotFound) {
         // (as librespot: the "metrics" of every request and a salt against caches)
         [url appendFormat:@"%@product=0&country=%@&salt=%u", [path rangeOfString:@"?"].location == NSNotFound ? @"?" : @"&",
          session.country ?: @"US", arc4random()];
@@ -35,13 +41,17 @@
         if (clientToken) headers[@"client-token"] = clientToken;
         if (accept) headers[@"Accept"] = accept;
         if (contentType) headers[@"Content-Type"] = contentType;
+        if (extraHeaders) [headers addEntriesFromDictionary:extraHeaders];
         NSInteger s = 0;
         NSData *data = S6SyncRequest(method, url, headers, body, &s, NULL, error);
         if (!data) return nil;
         if (s == 401 && attempt == 0) { [[S6Tokens shared] invalidateAccessToken]; continue; }
         if (status) *status = s;
         if (s >= 400) {
-            if (s != 404) S6Log(@"spclient %@: HTTP %ld", path, (long)s);
+            if (s != 404) {
+                NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+                S6Log(@"spclient %@ %@: HTTP %ld %@", method, path, (long)s, [S6Utils truncate:[text stringByReplacingOccurrencesOfString:@"\n" withString:@" "] to:300]);
+            }
             if (error) *error = S6MakeError(s, [NSString stringWithFormat:L(@"Spotify answered with error %ld."), (long)s]);
             return nil;
         }

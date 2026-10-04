@@ -2,6 +2,7 @@
 #import "S6Router.h"
 #import "S6Session.h"
 #import "S6Zeroconf.h"
+#import "S6Connect.h"
 #import "S6Settings.h"
 #import "S6Player.h"
 #import "S6Catalog.h"
@@ -179,6 +180,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
     [nc addObserver:self selector:@selector(reload) name:S6SessionStateDidChangeNotification object:nil];
     [nc addObserver:self selector:@selector(reload) name:S6ZeroconfDidChangeNotification object:nil];
     [nc addObserver:self selector:@selector(reload) name:S6SettingsDidChangeNotification object:nil];
+    [nc addObserver:self selector:@selector(reload) name:S6ConnectDidChangeNotification object:nil];
 }
 
 - (void)reload
@@ -209,7 +211,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
     switch (section) {
         case S6SetAccount: return 3;
         case S6SetPlayback: return 3;
-        case S6SetDevice: return 2;
+        case S6SetDevice: return 3;
         case S6SetStorage: return 1;
         case S6SetAbout: return 2;
         case S6SetLogout: return [S6Settings hasAccount] ? 1 : 0;
@@ -233,7 +235,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 {
     switch (section) {
         case S6SetPlayback: return L(@"Autoplay: when your music runs out, similar songs keep playing.");
-        case S6SetDevice: return L(@"The name you pick in the Spotify app on your phone to log in. While Spot6 is open, your phone can see it on the same Wi-Fi.");
+        case S6SetDevice: return L(@"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Spot6 is open, your devices can see it.");
         case S6SetAbout: return L(@"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify.");
     }
     return nil;
@@ -323,6 +325,11 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
             if (row == 1) {
                 cell.textLabel.text = L(@"Login from the phone");
                 cell.detailTextLabel.text = [S6Zeroconf shared].running ? L(@"Visible on Wi-Fi") : L(@"Off");
+            }
+            if (row == 2) {
+                S6Connect *connect = [S6Connect shared];
+                cell.textLabel.text = L(@"Spotify Connect");
+                cell.detailTextLabel.text = !connect.registered ? L(@"Connecting…") : connect.active ? L(@"Playing here") : L(@"Visible to your devices");
             }
             break;
         case S6SetStorage:

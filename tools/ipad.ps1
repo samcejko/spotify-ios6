@@ -6,7 +6,7 @@
 #   Get-IPadSyslog
 
 $script:IPadKey = Join-Path $env:USERPROFILE '.ssh\ipad_ios6'
-$script:IPadDefaultHost = '192.168.137.17'
+$script:IPadDefaultHost = ''   # (the address lives in tools/local.json, never in the repository)
 $script:IPadLocalCfg = Join-Path $PSScriptRoot 'local.json'
 if (Test-Path $script:IPadLocalCfg) {
     try {

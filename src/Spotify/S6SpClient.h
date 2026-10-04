@@ -7,6 +7,8 @@
 // A request to the spclient with the user's access token and the client token; `path` starts with "/"
 + (NSData *)request:(NSString *)method path:(NSString *)path body:(NSData *)body contentType:(NSString *)contentType
              accept:(NSString *)accept status:(NSInteger *)status error:(NSError **)error;
++ (NSData *)request:(NSString *)method path:(NSString *)path body:(NSData *)body contentType:(NSString *)contentType
+             accept:(NSString *)accept headers:(NSDictionary *)headers status:(NSInteger *)status error:(NSError **)error;
 
 // The Track message (metadata.proto) of a track through the extended-metadata endpoint
 + (NSData *)trackMetadata:(NSData *)gid error:(NSError **)error;

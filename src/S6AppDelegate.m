@@ -9,6 +9,7 @@
 #import "S6Catalog.h"
 #import "S6SpClient.h"
 #import "S6Zeroconf.h"
+#import "S6Connect.h"
 #import "S6Models.h"
 #import "S6Player.h"
 #import "S6TLSSocket.h"
@@ -89,6 +90,7 @@ static BOOL S6PressView(UIView *v, NSString *text)
     [self.window makeKeyAndVisible];
     [application setStatusBarStyle:UIStatusBarStyleBlackOpaque animated:NO];
 
+    [S6Connect shared];   // (Spotify Connect starts by itself once the session is ready)
     [[S6Session shared] start];
     [[S6Zeroconf shared] start];
     return YES;
@@ -146,6 +148,20 @@ static BOOL S6PressView(UIView *v, NSString *text)
         S6Log(@"Tokens: %@", [[S6Tokens shared] debugState]);
         S6Log(@"Zeroconf: %@ on port %u, %@", zc.running ? @"running" : @"stopped", zc.port, zc.lastEvent ?: @"-");
         S6Log(@"Player: %@", [[S6Player shared] debugState]);
+        S6Log(@"Connect: %@", [[S6Connect shared] debugState]);
+        return YES;
+    }
+    // connect?cmd=pause|resume|skip_next|skip_prev|seek_to&value=|play&uri=<context>&index=N: a Spotify Connect command
+    // sent to this device through Spotify, as the phone would
+    if ([target isEqualToString:@"connect"]) {
+        NSString *cmd = params[@"cmd"] ?: @"pause";
+        NSMutableDictionary *command = [NSMutableDictionary dictionaryWithObject:cmd forKey:@"endpoint"];
+        if (params[@"value"]) command[@"value"] = @([params[@"value"] longLongValue]);
+        if ([cmd isEqualToString:@"play"] && [params[@"uri"] length]) {
+            command[@"context"] = @{ @"uri": params[@"uri"], @"url": [@"context://" stringByAppendingString:params[@"uri"]] };
+            command[@"options"] = @{ @"skip_to": @{ @"track_index": @([params[@"index"] integerValue]) } };
+        }
+        [[S6Connect shared] debugSendCommand:command];
         return YES;
     }
     if ([target isEqualToString:@"aptest"]) { [[S6Session shared] debugHandshakeTest]; return YES; }

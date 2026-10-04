@@ -38,8 +38,15 @@ static const NSUInteger S6RingSeconds = 2;
     if ((self = [super init])) {
         pthread_mutex_init(&_mutex, NULL);
         pthread_cond_init(&_space, NULL);
+        _volume = 1;
     }
     return self;
+}
+
+- (void)setVolume:(float)volume
+{
+    _volume = MAX(0.f, MIN(1.f, volume));
+    if (_queue) AudioQueueSetParameter(_queue, kAudioQueueParam_Volume, _volume);
 }
 
 - (NSUInteger)framesBuffered
@@ -119,6 +126,7 @@ static void S6OutputCallback(void *user, AudioQueueRef queue, AudioQueueBufferRe
         return NO;
     }
     for (int i = 0; i < S6QueueBufferCount; i++) AudioQueueAllocateBuffer(_queue, S6BufferFrames * 4, &_buffers[i]);
+    AudioQueueSetParameter(_queue, kAudioQueueParam_Volume, _volume);
     self.sampleRate = rate;
     return YES;
 }
