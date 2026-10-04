@@ -5,6 +5,7 @@
 #import "S6Models.h"
 #import "S6WebAPI.h"
 #import "S6Session.h"
+#import "S6ImageLoader.h"
 #import "S6Utils.h"
 #import "S6Common.h"
 
