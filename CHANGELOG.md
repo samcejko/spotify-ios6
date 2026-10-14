@@ -3,7 +3,7 @@
 ## 0.1.1 (2026-10-14)
 
 - Settings → About has a "Support the development" row that opens the author's Ko-fi page. The app stays free.
-- Spot6 is in the Cydia repository `http://samcejko.eu/repo/` now: add it as a source in Cydia to get updates.
+- Spot6 is in the repository `http://repo.samcejko.eu/` now (Cydia, Sileo, Zebra, Installer): add it as a source to get updates.
 
 ## 0.1.0 (2026-10-04)
 
