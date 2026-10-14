@@ -4,7 +4,7 @@
 
 - A second build for 64-bit devices with iOS 14–17 (iPhone X and newer), from the same source tree: the `.deb` with
   `iphoneos-arm64` in its name for rootless jailbreaks (palera1n, Dopamine; it installs into `/var/jb`) and
-  `Spot6-<version>-arm64.ipa` for TrollStore. Not tried on a device yet.
+  `Spot6-<version>-arm64.ipa` for TrollStore. Tried on an iPhone X with iOS 16.
 - On iOS 7 and newer the app keeps its own 2012 look (the charcoal panels and the black glass bars are drawn through
   the appearance objects newer iOS insist on), opens Now Playing full screen and keeps the tab bar, the player bar and
   the full player clear of the notch and the home indicator. iOS 14 and newer ask once before the Spotify Connect

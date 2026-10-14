@@ -697,7 +697,11 @@ static BOOL S6IsAppController(UIViewController *vc)
     UIViewController *probe = vc;
     if ([vc isKindOfClass:[UINavigationController class]]) probe = ((UINavigationController *)vc).viewControllers.firstObject ?: vc;
     else if ([vc isKindOfClass:[UITabBarController class]]) probe = ((UITabBarController *)vc).viewControllers.firstObject ?: vc;
-    return [NSBundle bundleForClass:[probe class]] == [NSBundle mainBundle];
+    // (the bundle of a class from the executable is the main bundle; a system picker or sheet lives under /System)
+    NSBundle *bundle = [NSBundle bundleForClass:[probe class]];
+    if (bundle == [NSBundle mainBundle]) return YES;
+    NSString *path = bundle.bundlePath ?: @"";
+    return path.length && ![path hasPrefix:@"/System/"] && ![path hasPrefix:@"/Developer/"] && ![path hasPrefix:@"/usr/"];
 }
 
 static void S6Present(id self, SEL _cmd, UIViewController *vc, BOOL animated, void (^completion)(void))

@@ -243,6 +243,7 @@ static __weak S6RootViewController *S6RootShared;
     if ([top isKindOfClass:[S6NowPlayingViewController class]]) { ((S6NowPlayingViewController *)top).panel = (S6NowPlayingPanel)panel; return; }
     S6NowPlayingViewController *np = [[S6NowPlayingViewController alloc] init];
     np.panel = (S6NowPlayingPanel)panel;
+    np.modalPresentationStyle = UIModalPresentationFullScreen;   // (iOS 13 and newer would present a card)
     np.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
     [top presentViewController:np animated:YES completion:nil];
 }
