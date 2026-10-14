@@ -55,7 +55,11 @@ Every HTTPS connection goes through Spot6's own TLS layer (Mbed TLS), since iOS 
 
 ## Installing on the device
 
-The IPA installs with `ipainstaller -f Spot6-<version>.ipa` (AppSync Unified), or the DEB with `dpkg -i` then
+The easy way: add the Cydia repository `http://samcejko.eu/repo/` (Cydia → Sources → Edit → Add) and install Spot6
+from there; updates then come through Cydia. The app is free; if it is useful to you, you can support the development
+at [ko-fi.com/samcejko](https://ko-fi.com/samcejko).
+
+By hand: the IPA installs with `ipainstaller -f Spot6-<version>.ipa` (AppSync Unified), or the DEB with `dpkg -i` then
 `su mobile -c uicache`.
 
 ## Building

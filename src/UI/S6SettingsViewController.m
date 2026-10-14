@@ -213,7 +213,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
         case S6SetPlayback: return 3;
         case S6SetDevice: return 3;
         case S6SetStorage: return 1;
-        case S6SetAbout: return 2;
+        case S6SetAbout: return 3;
         case S6SetLogout: return [S6Settings hasAccount] ? 1 : 0;
     }
     return 0;
@@ -344,6 +344,12 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
                 cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                 cell.selectionStyle = UITableViewCellSelectionStyleGray;
             }
+            if (row == 2) {
+                cell.textLabel.text = L(@"Support the development");
+                cell.detailTextLabel.text = @"ko-fi.com/samcejko";
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            }
             break;
         case S6SetLogout:
             cell.textLabel.text = L(@"Log out");
@@ -383,6 +389,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
         }
         case S6SetAbout:
             if (indexPath.row == 1) [self.navigationController pushViewController:[[S6LicensesViewController alloc] init] animated:YES];
+            else if (indexPath.row == 2) [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://ko-fi.com/samcejko"]];
             break;
         case S6SetLogout: {
             UIAlertView *a = [[UIAlertView alloc] initWithTitle:L(@"Log out?") message:L(@"To log in again, pick this device in the Spotify app on your phone.")

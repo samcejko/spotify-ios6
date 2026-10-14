@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.1.0 (in progress)
+## 0.1.1 (2026-10-14)
+
+- Settings → About has a "Support the development" row that opens the author's Ko-fi page. The app stays free.
+- Spot6 is in the Cydia repository `http://samcejko.eu/repo/` now: add it as a source in Cydia to get updates.
+
+## 0.1.0 (2026-10-04)
 
 - First version: login from the phone (zeroconf), the access point session, login5 and client tokens
 - Browsing through Spotify's GraphQL API (the public Web API is rate limited for librespot's client id): the real,
