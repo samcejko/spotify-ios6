@@ -99,7 +99,8 @@ function Install-IPhonePackage {
     if (-not (Test-Path $DebPath)) { throw "no such file: $DebPath" }
     $IPhoneHost = Resolve-IPhoneHost $IPhoneHost
     $who = Invoke-IPhone -IPhoneHost $IPhoneHost -Command 'id -u' | Select-Object -Last 1
-    if ("$who".Trim() -ne '0') { throw "Install-IPhonePackage needs root on the phone (got uid '$who'): authorize ~/.ssh/iphone.pub in /var/root/.ssh/authorized_keys and set iphoneUser to root" }
+    if ("$who" -match 'ssh:|Connection|refused|timed out|denied') { throw "cannot reach $IPhoneHost over SSH ($("$who".Trim())): is the phone awake and on the Wi-Fi?" }
+    if ("$who".Trim() -ne '0') { throw "Install-IPhonePackage needs root on the phone (got uid '$who'): authorize ~/.ssh/iphone.pub in /var/jb/var/root/.ssh/authorized_keys and set iphoneUser to root" }
     $remote = "/tmp/$($AppName.ToLower()).deb"
     Write-Host "Installing $DebPath on $IPhoneHost ..."
     Copy-ToIPhone -IPhoneHost $IPhoneHost -LocalPath $DebPath -RemotePath $remote

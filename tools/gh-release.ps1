@@ -31,12 +31,12 @@ $assets = @(Get-ChildItem $RunDir -File | Where-Object { $_.Extension -in '.ipa'
 if (-not $assets) { throw "No .ipa/.deb in $RunDir" }
 
 # the notes: the CHANGELOG section of this version, then the checksums
-$changelog = Get-Content (Join-Path $root 'CHANGELOG.md') -Raw
+$changelog = Get-Content (Join-Path $root 'CHANGELOG.md') -Raw -Encoding UTF8
 $section = ''
 if ($changelog -match "(?s)## $([regex]::Escape($Version))[^\n]*\n(.*?)(\n## |\z)") { $section = $Matches[1].Trim() }
 # (ASCII only in this file: Windows PowerShell 5.1 reads a BOM-less script in the ANSI code page)
 $sums = $assets | ForEach-Object { "- ``$($_.Name)`` - SHA-256 ``$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())``" }
-$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Spot6-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. **Logging in** needs Spotify Premium: open Spot6, then pick "Spot6 (iPad)" in the Spotify app on your phone (same Wi-Fi). Spot6 is an unofficial app, not made by Spotify.' -f $Version
+$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Spot6-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. **Logging in** needs Spotify Premium: open Spot6, then pick "Spot6 (iPad)" in the Spotify app on your phone (same Wi-Fi). Spot6 is an unofficial app, not made by Spotify. **iOS 14-17 (arm64, iPhone X and newer):** the `iphoneos-arm64` DEB for rootless jailbreaks (open it in Sileo or Zebra, or `dpkg -i`), the `-arm64.ipa` for TrollStore.' -f $Version
 $notes = ($section, '', $install, '', '**Checksums**', ($sums -join "`n")) -join "`n"
 
 Write-Host "Release $tag of $Repo at $($Sha.Substring(0, [Math]::Min(7, $Sha.Length)))"
