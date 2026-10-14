@@ -62,6 +62,10 @@ void S6ModernStyleToolbar(UIToolbar *bar);
 void S6ModernStyleSearchBar(UISearchBar *bar);
 void S6ModernStyleTabBar(UITabBar *bar);
 
+// iOS 13 and newer: the pieces of a table the system draws itself (section headers and footers, the default
+// colours of untouched labels) follow the lightness of the theme instead of the app's light style; nothing before
+void S6ModernSetTableViewDark(UITableView *tableView, BOOL dark);
+
 // The status bar style to ask for: on iOS 7 and newer the status bar lies over the (always dark) bar, so its text
 // has to be light whatever the iOS 6 style would have been; on iOS 6 the given style is returned unchanged.
 UIStatusBarStyle S6ModernStatusBarStyle(UIStatusBarStyle ios6Style);
