@@ -1,4 +1,5 @@
 #import "S6SettingsViewController.h"
+#import "S6ExternalOpen.h"
 #import "S6Router.h"
 #import "S6Session.h"
 #import "S6Zeroconf.h"
@@ -389,7 +390,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
         }
         case S6SetAbout:
             if (indexPath.row == 1) [self.navigationController pushViewController:[[S6LicensesViewController alloc] init] animated:YES];
-            else if (indexPath.row == 2) [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://ko-fi.com/samcejko"]];
+            else if (indexPath.row == 2) [S6ExternalOpen presentOpenInForURL:[NSURL URLWithString:@"https://ko-fi.com/samcejko"] from:self anchor:[tableView cellForRowAtIndexPath:indexPath]];
             break;
         case S6SetLogout: {
             UIAlertView *a = [[UIAlertView alloc] initWithTitle:L(@"Log out?") message:L(@"To log in again, pick this device in the Spotify app on your phone.")

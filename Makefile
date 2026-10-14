@@ -56,7 +56,7 @@ after-stage::
 # The .deb is for rootless jailbreaks (iOS 15 and newer; Theos sets Architecture: iphoneos-arm64 and the /var/jb
 # prefix itself) and tells the home screen about the app when installed or removed.
 before-package::
-	sed -i -e 's/^Depends: firmware (>= 6.0)/Depends: firmware (>= 15.0)/' "$(THEOS_STAGING_DIR)/DEBIAN/control"
+	sed -i -e 's/^Depends: .*/Depends: firmware (>= 15.0)/' "$(THEOS_STAGING_DIR)/DEBIAN/control"
 	printf '%s\n' '#!/bin/sh' '[ "$$1" = configure ] || exit 0' \
 		'command -v uicache >/dev/null 2>&1 && { uicache -p /var/jb/Applications/Spot6.app >/dev/null 2>&1 || uicache -a >/dev/null 2>&1; }' \
 		'exit 0' > "$(THEOS_STAGING_DIR)/DEBIAN/postinst"

@@ -8,6 +8,7 @@
 #import "S6Session.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
+#import "S6ExternalOpen.h"
 #import "S6Common.h"
 
 typedef NS_ENUM(NSInteger, S6ListKind) { S6ListAlbum, S6ListPlaylist, S6ListLiked, S6ListShow, S6ListTracks };
@@ -32,6 +33,7 @@ static NSString * const S6TrackCellId = @"track";
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *infoLabel;
 @property (nonatomic, strong) UILabel *descriptionLabel;
+@property (nonatomic, strong) NSArray *descriptionLinks;   // the web links in the description (a tap on it opens them)
 @property (nonatomic, strong) UIButton *playButton;
 @property (nonatomic, strong) UIButton *shuffleButton;
 @property (nonatomic, strong) UIButton *saveButton;
@@ -147,6 +149,8 @@ static NSString * const S6TrackCellId = @"track";
     self.infoLabel.numberOfLines = 2;
     self.descriptionLabel = [self headerLabel:[theme smallFont] color:[theme tertiaryTextColor]];
     self.descriptionLabel.numberOfLines = 2;
+    self.descriptionLabel.userInteractionEnabled = YES;
+    [self.descriptionLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(descriptionTapped)]];
     self.playButton = [theme greenButtonWithTitle:L(@"Play")];
     [self.playButton addTarget:self action:@selector(playAll) forControlEvents:UIControlEventTouchUpInside];
     [self.header addSubview:self.playButton];
@@ -156,6 +160,12 @@ static NSString * const S6TrackCellId = @"track";
     self.saveButton = [theme outlineButtonWithTitle:L(@"Save")];
     [self.saveButton addTarget:self action:@selector(toggleSaved) forControlEvents:UIControlEventTouchUpInside];
     [self.header addSubview:self.saveButton];
+}
+
+// A tap on the description opens the links in it (one at once, several listed first)
+- (void)descriptionTapped
+{
+    [S6ExternalOpen presentLinkChooserForURLs:self.descriptionLinks from:self anchor:self.descriptionLabel];
 }
 
 - (NSString *)imageURL
@@ -210,6 +220,7 @@ static NSString * const S6TrackCellId = @"track";
     self.titleLabel.text = [S6Utils displayText:self.listTitle];
     self.infoLabel.text = [S6Utils displayText:info];
     self.descriptionLabel.text = [S6Utils displayText:description];
+    self.descriptionLinks = [S6ExternalOpen linksInText:description];
     if (self.kind == S6ListLiked) {
         self.cover.image = [self likedArtwork];
     } else {

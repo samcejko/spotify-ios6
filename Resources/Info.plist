@@ -24,9 +24,9 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.2.0</string>
+	<string>0.2.1</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>iPhoneOS</string>
@@ -129,5 +129,14 @@
 	<string>Light</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>surfari</string>
+		<string>tubie</string>
+		<string>twitcher</string>
+		<string>kicker</string>
+		<string>tiktak</string>
+		<string>tikie</string>
+	</array>
 </dict>
 </plist>

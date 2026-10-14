@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 (2026-10-14)
+
+- Links in playlist and podcast descriptions: tap the description to open them. On iOS 6 a link opens in Safari or
+  Surfari (your choice), on newer iOS in Safari; a link to YouTube, Twitch, Kick or TikTok offers the sister app when
+  it is installed. The Ko-fi link in Settings behaves the same.
+- The iOS 6 package declares iOS 6.0 to 10.x (64-bit devices use the arm64 package).
+
 ## 0.2.0 (2026-10-14)
 
 - A second build for 64-bit devices with iOS 14–17 (iPhone X and newer), from the same source tree: the `.deb` with
