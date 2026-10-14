@@ -1,5 +1,6 @@
 #import "S6AppDelegate.h"
 #import "S6RootViewController.h"
+#import "S6ExternalOpen.h"
 #import "S6SearchViewController.h"
 #import "S6NowPlayingViewController.h"
 #import "S6Router.h"
@@ -165,6 +166,11 @@ static BOOL S6PressView(UIView *v, NSString *text)
             command[@"options"] = @{ @"skip_to": @{ @"track_index": @([params[@"index"] integerValue]) } };
         }
         [[S6Connect shared] debugSendCommand:command];
+        return YES;
+    }
+    // link?url=<percent-encoded url>: what a tapped web link does (the browser chooser on iOS 6), for the tests
+    if ([target isEqualToString:@"link"] && [params[@"url"] length]) {
+        [S6ExternalOpen presentOpenInForURL:[NSURL URLWithString:params[@"url"]] from:top anchor:nil];
         return YES;
     }
     if ([target isEqualToString:@"aptest"]) { [[S6Session shared] debugHandshakeTest]; return YES; }
