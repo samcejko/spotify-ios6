@@ -52,7 +52,7 @@ ifeq ($(THEOS_PACKAGE_SCHEME),rootless)
 # images (tools/modern_bundle.py), signed again with the entitlements afterwards.
 after-stage::
 	python3 "$(THEOS_PROJECT_DIR)/tools/modern_bundle.py" "$(SPOT6_STAGED_APP)"
-	ldid -S"$(THEOS_PROJECT_DIR)/entitlements.xml" "$(SPOT6_STAGED_BIN)"
+	ldid -S"$(THEOS_PROJECT_DIR)/entitlements-arm64.xml" "$(SPOT6_STAGED_BIN)"
 # The .deb is for rootless jailbreaks (iOS 15 and newer; Theos sets Architecture: iphoneos-arm64 and the /var/jb
 # prefix itself) and tells the home screen about the app when installed or removed.
 before-package::
