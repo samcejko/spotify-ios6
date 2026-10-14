@@ -170,7 +170,11 @@ static BOOL S6PressView(UIView *v, NSString *text)
     }
     // link?url=<percent-encoded url>: what a tapped web link does (the browser chooser on iOS 6), for the tests
     if ([target isEqualToString:@"link"] && [params[@"url"] length]) {
-        [S6ExternalOpen presentOpenInForURL:[NSURL URLWithString:params[@"url"]] from:top anchor:nil];
+        // (a moment later: the URL arrives before the app is active again, and newer iOS ignore openURL: and sheets then)
+        NSString *link = params[@"url"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.7 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [S6ExternalOpen presentOpenInForURL:[NSURL URLWithString:link] from:[[S6RootViewController shared] topController] anchor:nil];
+        });
         return YES;
     }
     if ([target isEqualToString:@"aptest"]) { [[S6Session shared] debugHandshakeTest]; return YES; }
