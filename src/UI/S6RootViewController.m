@@ -13,6 +13,7 @@
 #import "S6Settings.h"
 #import "S6Models.h"
 #import "S6Theme.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 
 static __weak S6RootViewController *S6RootShared;
@@ -114,17 +115,21 @@ static __weak S6RootViewController *S6RootShared;
     CGSize s = self.view.bounds.size;
     BOOL bar = [self showsPlayerBar];
     self.playerBar.hidden = !bar;
+    // the home indicator of iOS 11+ (zero elsewhere): the bottom bar grows over it, its content stays above
+    CGFloat home = S6SafeAreaInsets(self.view).bottom;
     if (S6IsPad()) {
         CGFloat barH = [S6PlayerBar heightCompact:NO];
         CGFloat side = s.width > s.height ? 250 : 220;
-        self.sidebar.view.frame = CGRectMake(0, 0, side, s.height - barH);
-        self.divider.frame = CGRectMake(side, 0, 1, s.height - barH);
-        self.current.view.frame = CGRectMake(side + 1, 0, s.width - side - 1, s.height - barH);
-        self.playerBar.frame = CGRectMake(0, s.height - barH, s.width, barH);
+        self.sidebar.view.frame = CGRectMake(0, 0, side, s.height - barH - home);
+        self.divider.frame = CGRectMake(side, 0, 1, s.height - barH - home);
+        self.current.view.frame = CGRectMake(side + 1, 0, s.width - side - 1, s.height - barH - home);
+        self.playerBar.frame = CGRectMake(0, s.height - barH - home, s.width, barH + home);
+        self.playerBar.bottomInset = home;
     } else {
-        CGFloat tabH = 49, barH = bar ? [S6PlayerBar heightCompact:YES] : 0;
-        self.tabBar.frame = CGRectMake(0, s.height - tabH, s.width, tabH);
+        CGFloat tabH = 49 + home, barH = bar ? [S6PlayerBar heightCompact:YES] : 0;
+        self.tabBar.frame = CGRectMake(0, s.height - tabH, s.width, tabH);   // (the items sit above the indicator by themselves)
         self.playerBar.frame = CGRectMake(0, s.height - tabH - barH, s.width, [S6PlayerBar heightCompact:YES]);
+        self.playerBar.bottomInset = 0;
         self.current.view.frame = CGRectMake(0, 0, s.width, s.height - tabH - barH);
     }
     self.login.view.frame = self.view.bounds;
@@ -297,7 +302,8 @@ static __weak S6RootViewController *S6RootShared;
     self.toast.text = text;
     CGSize size = [text sizeWithFont:self.toast.font constrainedToSize:CGSizeMake(MIN(host.bounds.size.width - 60, 420), 200)];
     CGFloat w = ceilf(size.width) + 40, h = ceilf(size.height) + 24;
-    CGFloat y = host == self.view ? host.bounds.size.height - ([self showsPlayerBar] ? (S6IsPad() ? 72 : 54) : 0) - (self.tabBar ? 49 : 0) - h - 24 : host.bounds.size.height * 0.75 - h / 2;
+    CGFloat bottomBars = ([self showsPlayerBar] ? (S6IsPad() ? 72 : 54) : 0) + (self.tabBar ? 49 : 0) + S6SafeAreaInsets(self.view).bottom;
+    CGFloat y = host == self.view ? host.bounds.size.height - bottomBars - h - 24 : host.bounds.size.height * 0.75 - h / 2;
     self.toast.frame = CGRectIntegral(CGRectMake((host.bounds.size.width - w) / 2, y, w, h));
     self.toast.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin;
     self.toast.alpha = 0;

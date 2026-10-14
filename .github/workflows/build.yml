@@ -1,4 +1,4 @@
-name: Build Spot6 (iOS 6, armv7)
+name: Build Spot6 (iOS 6 armv7 + iOS 14 arm64)
 
 on:
   push:
@@ -13,10 +13,26 @@ permissions:
 env:
   THEOS: /home/runner/theos
   MBEDTLS_VERSION: "3.6.7"
-  THEOS_CACHE_KEY: theos-linux-clang11-sdk93-v1
+  # Theos + toolchain + the iOS 9.3 and 16.5 SDKs (bump when any of them changes)
+  THEOS_CACHE_KEY: theos-linux-clang11-sdk93-sdk165-v2
 
 jobs:
   build:
+    # One source tree, two packages: armv7 for iOS 6 (Cydia, ipainstaller) and arm64 for iOS 14-17 (the .deb for
+    # rootless jailbreaks, the IPA for TrollStore). THEOS_PACKAGE_SCHEME=rootless selects the latter in the Makefile.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ios6-armv7
+            scheme: ""
+            suffix: ""
+            artifact: Spot6-packages
+          - name: ios14-arm64
+            scheme: rootless
+            suffix: "-arm64"
+            artifact: Spot6-packages-arm64
+    name: ${{ matrix.name }}
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -38,7 +54,7 @@ jobs:
           path: /home/runner/theos
           key: ${{ env.THEOS_CACHE_KEY }}
 
-      - name: Install Theos, toolchain and iOS 9.3 SDK
+      - name: Install Theos, toolchain and the iOS 9.3 and 16.5 SDKs
         if: steps.theos-cache.outputs.cache-hit != 'true'
         run: |
           set -e
@@ -56,19 +72,23 @@ jobs:
           fi
           ls -la "$THEOS/toolchain/linux/iphone/bin" | head -n 40
 
-          echo "== SDK =="
-          SDK_URL=$(curl -sS https://api.github.com/repos/theos/sdks/releases/latest | grep -o 'https://[^"]*iPhoneOS9\.3\.sdk[^"]*' | head -n1 || true)
-          echo "SDK asset: $SDK_URL"
-          if [ -n "$SDK_URL" ]; then
-            curl -sSL "$SDK_URL" -o /tmp/sdk.archive
-            (tar -xJf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || tar -xzf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || unzip -q /tmp/sdk.archive -d "$THEOS/sdks/")
-          fi
-          if [ ! -d "$THEOS/sdks/iPhoneOS9.3.sdk" ]; then
-            echo "Falling back to sparse checkout of theos/sdks"
-            git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/sdks
-            (cd /tmp/sdks && git sparse-checkout set iPhoneOS9.3.sdk)
-            mv /tmp/sdks/iPhoneOS9.3.sdk "$THEOS/sdks/"
-          fi
+          echo "== SDKs =="
+          RELEASE=$(curl -sS https://api.github.com/repos/theos/sdks/releases/latest)
+          for SDK in 9.3 16.5; do
+            SDK_URL=$(echo "$RELEASE" | grep -o "https://[^\"]*iPhoneOS${SDK}\.sdk[^\"]*" | head -n1 || true)
+            echo "SDK $SDK asset: $SDK_URL"
+            if [ -n "$SDK_URL" ]; then
+              curl -sSL "$SDK_URL" -o /tmp/sdk.archive
+              (tar -xJf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || tar -xzf /tmp/sdk.archive -C "$THEOS/sdks/" 2>/dev/null || unzip -q /tmp/sdk.archive -d "$THEOS/sdks/")
+            fi
+            if [ ! -d "$THEOS/sdks/iPhoneOS${SDK}.sdk" ]; then
+              echo "Falling back to sparse checkout of theos/sdks for $SDK"
+              rm -rf /tmp/sdks
+              git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/sdks
+              (cd /tmp/sdks && git sparse-checkout set "iPhoneOS${SDK}.sdk")
+              mv "/tmp/sdks/iPhoneOS${SDK}.sdk" "$THEOS/sdks/"
+            fi
+          done
           ls "$THEOS/sdks"
 
       - name: Toolchain diagnostics
@@ -106,7 +126,7 @@ jobs:
       - name: Generate icons and launch images
         run: python3 tools/gen_assets.py Resources
 
-      - name: Patch SDK (stub re-exported libraries missing from theos/sdks)
+      - name: Patch the iOS 9.3 SDK (stub re-exported libraries missing from theos/sdks)
         run: |
           set -e
           # The toolchain's plistutil is linked against libplist-2.0.so.4, which Ubuntu 22.04 does not ship.
@@ -161,21 +181,26 @@ jobs:
           done
           if [ $status -ne 0 ]; then echo "SYNTAX CHECK FOUND ERRORS (see above)"; else echo "syntax check clean"; fi
 
-      - name: Build
+      - name: Build (${{ matrix.name }})
         run: |
           set -o pipefail
           export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
+          if [ -n "${{ matrix.scheme }}" ]; then export THEOS_PACKAGE_SCHEME="${{ matrix.scheme }}"; fi
           make clean || true
           # (-k: every file is compiled even after one fails, so one run shows every compile error)
           make package FINALPACKAGE=1 -j"$(nproc)" -k 2>&1 | tee build.log
-          echo "== staged app =="
-          ls -la .theos/_/Applications/Spot6.app
+          APP=$(find .theos/_ -type d -name Spot6.app | head -n1)
+          test -n "$APP"
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          echo "== staged app ($APP) =="
+          ls -la "$APP"
+          lipo -info "$APP/Spot6" 2>/dev/null || true
 
       - name: Make IPA
         run: |
           set -e
           export PATH="$THEOS/toolchain/linux/iphone/bin:$THEOS/bin:$PATH"
-          APP=.theos/_/Applications/Spot6.app
+          echo "app: $APP"
           LDID=$(command -v ldid || find "$THEOS" -type f -name ldid | head -n1)
           echo "ldid: $LDID"
           "$LDID" -S"$GITHUB_WORKSPACE/entitlements.xml" "$APP/Spot6"
@@ -184,13 +209,13 @@ jobs:
           rm -rf /tmp/ipa && mkdir -p /tmp/ipa/Payload packages
           cp -a "$APP" /tmp/ipa/Payload/
           # (the bundle inside keeps the app's first name, Spot6.app; the file is named as the app is shown)
-          (cd /tmp/ipa && zip -qr9 "$GITHUB_WORKSPACE/packages/Spot6-$VERSION.ipa" Payload)
+          (cd /tmp/ipa && zip -qr9 "$GITHUB_WORKSPACE/packages/Spot6-$VERSION${{ matrix.suffix }}.ipa" Payload)
           ls -la packages/
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: Spot6-packages
+          name: ${{ matrix.artifact }}
           path: |
             packages/*.ipa
             packages/*.deb
@@ -200,6 +225,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
+          name: build-log-${{ matrix.name }}
           path: build.log
           if-no-files-found: ignore

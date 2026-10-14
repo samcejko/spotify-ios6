@@ -1,0 +1,3 @@
+/* Spot6 – the system's permission questions (iOS 14 and newer). */
+
+"NSLocalNetworkUsageDescription" = "Spot6 announces itself on your Wi-Fi so that the Spotify app on your phone can log it in and play to it.";

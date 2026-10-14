@@ -1,8 +1,9 @@
 # Spot6 - Spotify on iOS 6
 
-An unofficial Spotify client for jailbroken iOS 6.x (iPad 2 / iPhone 4S era), in English and Czech, in the look of
-Spotify's own iPad app of 2012: charcoal panels, glossy black bars, the green of the time. It plays music by itself
-on the device - no phone needed once you are logged in.
+An unofficial Spotify client for jailbroken iOS 6.x (iPad 2 / iPhone 4S era) and, as a second build of the same
+sources, for 64-bit devices with iOS 14–17 (iPhone X and newer: rootless jailbreaks and TrollStore), in English and
+Czech, in the look of Spotify's own iPad app of 2012: charcoal panels, glossy black bars, the green of the time. It
+plays music by itself on the device - no phone needed once you are logged in.
 
 - **Home**: a greeting, recently played, your top artists and songs, your playlists, new releases, featured playlists
 - **Search** as you type: songs, artists, albums, playlists, podcasts; recent searches; browse categories
@@ -62,11 +63,19 @@ at [ko-fi.com/samcejko](https://ko-fi.com/samcejko).
 By hand: the IPA installs with `ipainstaller -f Spot6-<version>.ipa` (AppSync Unified), or the DEB with `dpkg -i` then
 `su mobile -c uicache`.
 
+On iOS 14–17 (64-bit): with a rootless jailbreak add the same repository in Sileo or Zebra, or install the
+`iphoneos-arm64` `.deb` with `dpkg -i` (it goes into `/var/jb/Applications`); without a jailbreak open
+`Spot6-<version>-arm64.ipa` in [TrollStore](https://github.com/opa334/TrollStore). Not tried on a device yet.
+
 ## Building
 
-GitHub Actions builds the IPA (Theos, iOS 9.3 SDK, deployment target iOS 6.0, armv7); see
-`.github/workflows/build.yml`. Mbed TLS and the CA bundle are fetched during the build; the icon and launch images
-are generated from `tools/icon.svg`.
+GitHub Actions builds the packages twice from one source tree (see `.github/workflows/build.yml`): armv7 for iOS 6
+(Theos, the iOS 9.3 SDK, deployment target 6.0) and, with `make package THEOS_PACKAGE_SCHEME=rootless`, arm64 for
+iOS 14–17 (the iOS 16.5 SDK, deployment target 14.0; the `.deb` for rootless jailbreaks, the `-arm64.ipa` for
+TrollStore). The differences live in `src/Util/S6Modern.m` and `tools/modern_bundle.py`. Mbed TLS and the CA bundle
+are fetched during the build; the icon and launch images are generated from `tools/icon.svg`.
+`tools/gh-build.ps1 -Download -Install` fetches both builds and installs on the iPad, `-InstallIPhone` the arm64
+`.deb` on the iPhone (`tools/iphone.ps1`).
 
 ## Project layout
 

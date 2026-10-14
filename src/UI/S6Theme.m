@@ -1,4 +1,5 @@
 #import "S6Theme.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 
 static UIColor *RGB(NSInteger r, NSInteger g, NSInteger b)
@@ -633,12 +634,35 @@ static void S6Arrowhead(CGPoint tip, CGFloat angle, CGFloat size)
     [[UISlider appearance] setMaximumTrackImage:[self sliderTrackImageFilled:NO] forState:UIControlStateNormal];
     [[UISlider appearance] setThumbImage:[self sliderThumbImage] forState:UIControlStateNormal];
     [[UISwitch appearance] setOnTintColor:[self accentColor]];
+
+    // iOS 7 and newer: the same artwork through the appearance objects iOS 13-15 insist on (no-ops on iOS 6)
+    S6ModernApplyNavigationBarBackground(nav, [self navigationBarImage], [self modernTitleAttributesSize:0],
+                                         [self darkButtonImageHighlighted:NO], [self darkButtonImageHighlighted:YES], [self modernTitleAttributesSize:12]);
+    S6ModernApplyTabBarBackground([UITabBar appearance], [self tabBarImage]);
+    if (S6ModernIOS()) {
+        [[UITabBar appearance] setTintColor:[self accentColor]];       // (the selected tab's colour from iOS 7 on)
+        [[UINavigationBar appearance] setTintColor:[self primaryTextColor]];
+        [nav setBarStyle:UIBarStyleBlack];
+    }
+}
+
+// The title attributes with the keys of iOS 7 and newer (0: the bar's title font)
+- (NSDictionary *)modernTitleAttributesSize:(CGFloat)size
+{
+    NSShadow *shadow = [[NSShadow alloc] init];
+    shadow.shadowColor = [UIColor colorWithWhite:0 alpha:0.7];
+    shadow.shadowOffset = CGSizeMake(0, -1);
+    return @{ NSForegroundColorAttributeName: [self primaryTextColor],
+              NSFontAttributeName: size > 0 ? [UIFont boldSystemFontOfSize:size] : [self titleFont],
+              NSShadowAttributeName: shadow };
 }
 
 - (void)applyToNavigationBar:(UINavigationBar *)bar
 {
     [bar setBackgroundImage:[self navigationBarImage] forBarMetrics:UIBarMetricsDefault];
     bar.barStyle = UIBarStyleBlack;
+    S6ModernApplyNavigationBarBackground(bar, [self navigationBarImage], [self modernTitleAttributesSize:0],
+                                         [self darkButtonImageHighlighted:NO], [self darkButtonImageHighlighted:YES], [self modernTitleAttributesSize:12]);
 }
 
 - (void)applyToTableView:(UITableView *)tableView
@@ -665,12 +689,10 @@ static void S6Arrowhead(CGPoint tip, CGFloat angle, CGFloat size)
 {
     bar.backgroundImage = [self navigationBarImage];
     [bar setSearchFieldBackgroundImage:[self searchFieldImage] forState:UIControlStateNormal];
-    for (UIView *v in bar.subviews) {
-        if ([v isKindOfClass:[UITextField class]]) {
-            UITextField *f = (UITextField *)v;
-            f.textColor = [self primaryTextColor];
-            f.keyboardAppearance = UIKeyboardAppearanceAlert;
-        }
+    UITextField *f = S6ModernSearchBarTextField(bar);   // (nested deeper from iOS 7 on)
+    if (f) {
+        f.textColor = [self primaryTextColor];
+        f.keyboardAppearance = UIKeyboardAppearanceAlert;
     }
 }
 

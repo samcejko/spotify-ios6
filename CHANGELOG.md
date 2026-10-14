@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2026-10-14)
+
+- A second build for 64-bit devices with iOS 14–17 (iPhone X and newer), from the same source tree: the `.deb` with
+  `iphoneos-arm64` in its name for rootless jailbreaks (palera1n, Dopamine; it installs into `/var/jb`) and
+  `Spot6-<version>-arm64.ipa` for TrollStore. Not tried on a device yet.
+- On iOS 7 and newer the app keeps its own 2012 look (the charcoal panels and the black glass bars are drawn through
+  the appearance objects newer iOS insist on), opens Now Playing full screen and keeps the tab bar, the player bar and
+  the full player clear of the notch and the home indicator. iOS 14 and newer ask once before the Spotify Connect
+  announcement on the local network (the phone's login); the question is in English and Czech.
+- The 32-bit build behaves the same on devices with iOS 7–10.
+
 ## 0.1.1 (2026-10-14)
 
 - Settings → About has a "Support the development" row that opens the author's Ko-fi page. The app stays free.

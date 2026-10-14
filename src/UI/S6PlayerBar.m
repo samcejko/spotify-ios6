@@ -133,10 +133,18 @@
     return b;
 }
 
+- (void)setBottomInset:(CGFloat)bottomInset
+{
+    if (bottomInset == _bottomInset) return;
+    _bottomInset = bottomInset;
+    [self setNeedsLayout];
+}
+
 - (void)layoutSubviews
 {
     [super layoutSubviews];
     CGSize s = self.bounds.size;
+    s.height -= self.bottomInset;   // (the part over the home indicator of iOS 11+ stays empty)
     if (self.compact) {
         self.thinProgress.frame = CGRectMake(0, 0, self.thinProgress.frame.size.width, 2);
         self.art.frame = CGRectMake(6, 6, s.height - 12, s.height - 12);

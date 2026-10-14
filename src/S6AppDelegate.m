@@ -17,6 +17,7 @@
 #import "S6Settings.h"
 #import "S6Theme.h"
 #import "S6Utils.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 #import <AVFoundation/AVFoundation.h>
 #include <dlfcn.h>
@@ -76,6 +77,8 @@ static BOOL S6PressView(UIView *v, NSString *text)
     S6Log(@"Spot6 %@ starting on %@ (iOS %@)", [S6Utils appVersion], [S6Utils deviceModel], [UIDevice currentDevice].systemVersion);
     [S6TLSSocket warmUp];
     [[S6ImageLoader shared] pruneDisk];
+    // iOS 7 and newer (the arm64 build): full-screen modals, rounded grouped tables; the look stays Spot6's own
+    S6ModernSetUpWithoutSkin();
     [[S6Theme shared] applyGlobalAppearance];
 
     // music goes on with the screen locked and the silent switch on

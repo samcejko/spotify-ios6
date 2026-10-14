@@ -8,6 +8,7 @@
 #import "S6SpClient.h"
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 #import <MediaPlayer/MediaPlayer.h>
 
@@ -386,8 +387,9 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     [super viewWillLayoutSubviews];
     CGSize s = self.view.bounds.size;
     BOOL landscape = s.width > s.height;
-    // iOS 6 puts the view under the status bar, iOS 7 and later behind it
-    CGFloat top = [[[UIDevice currentDevice] systemVersion] integerValue] >= 7 ? 20 : 0;
+    // iOS 6 puts the view under the status bar; from iOS 7 on it lies behind it (hidden here), and iOS 11+ has the notch
+    CGFloat top = S6ModernTopInset(self.view, 0);
+    if (top < 20 && S6ModernIOS()) top = 20;
     self.closeButton.frame = CGRectMake(8, top + 4, 44, 44);
     self.moreButton.frame = CGRectMake(s.width - 52, top + 4, 44, 44);
     self.contextLabel.frame = CGRectMake(60, top + 6, s.width - 120, 36);

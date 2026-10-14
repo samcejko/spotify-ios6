@@ -3,6 +3,7 @@
 #import "S6Zeroconf.h"
 #import "S6Settings.h"
 #import "S6Theme.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 
 @interface S6LoginViewController ()
@@ -111,7 +112,7 @@
     [super viewWillLayoutSubviews];
     CGSize s = self.view.bounds.size;
     CGFloat w = MIN(s.width - 40, 520), x = (s.width - w) / 2;
-    CGFloat y = S6IsPad() ? MAX(40, (s.height - 640) / 2) : 30;
+    CGFloat y = (S6IsPad() ? MAX(40, (s.height - 640) / 2) : 30) + S6SafeAreaInsets(self.view).top;   // (the notch on iOS 11+)
     CGFloat markSide = self.mark.image.size.width;
     self.mark.frame = CGRectMake((s.width - markSide) / 2, y, markSide, markSide);
     y += markSide + 8;

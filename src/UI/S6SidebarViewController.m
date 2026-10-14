@@ -6,6 +6,7 @@
 #import "S6ImageLoader.h"
 #import "S6Utils.h"
 #import "S6Theme.h"
+#import "S6Modern.h"
 #import "S6Common.h"
 
 enum { S6SideMain, S6SideLibrary, S6SidePlaylists, S6SideSectionCount };
@@ -164,7 +165,8 @@ enum { S6SideMain, S6SideLibrary, S6SidePlaylists, S6SideSectionCount };
 {
     [super viewWillLayoutSubviews];
     CGSize s = self.view.bounds.size;
-    CGFloat top = [[[UIDevice currentDevice] systemVersion] integerValue] >= 7 ? 20 : 0;
+    // (iOS 6 puts the view under the status bar; from iOS 7 on it lies behind it)
+    CGFloat top = S6ModernTopInset(self.view, 0);
     self.logo.frame = CGRectMake(14, top + 12, 30, 30);
     self.wordmark.frame = CGRectMake(52, top + 10, s.width - 60, 34);
     CGFloat footerH = 52;
