@@ -581,6 +581,14 @@ static void S6Arrowhead(CGPoint tip, CGFloat angle, CGFloat size)
             [p addLineToPoint:CGPointMake(20, 6)];
             S6Stroke(p, 2.6);
             break;
+        case S6IconMoon: {
+            [[UIBezierPath bezierPathWithOvalInRect:CGRectMake(3, 3, 18, 18)] fill];
+            CGContextRef ctx = UIGraphicsGetCurrentContext();
+            CGContextSetBlendMode(ctx, kCGBlendModeClear);
+            [[UIBezierPath bezierPathWithOvalInRect:CGRectMake(9, 0.5, 15, 15)] fill];
+            CGContextSetBlendMode(ctx, kCGBlendModeNormal);
+            break;
+        }
     }
 }
 

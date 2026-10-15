@@ -32,8 +32,31 @@
     self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.showsVerticalScrollIndicator = NO;
-    self.tableView.contentInset = UIEdgeInsetsMake(40, 0, 120, 0);
     self.currentLine = -1;
+}
+
+// Room above the first line and below the last one, so that the line being sung can always stand a little above the
+// middle (the panel is only ~180 points tall on a 3.5" iPhone)
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    CGFloat h = self.tableView.bounds.size.height;
+    UIEdgeInsets inset = UIEdgeInsetsMake(floorf(h * 0.4f), 0, ceilf(h * 0.6f), 0);
+    if (h > 0 && !UIEdgeInsetsEqualToEdgeInsets(inset, self.tableView.contentInset)) {
+        self.tableView.contentInset = inset;
+        [self scrollToCurrentAnimated:NO];
+    }
+}
+
+- (void)scrollToCurrentAnimated:(BOOL)animated
+{
+    UITableView *t = self.tableView;
+    if (self.message || self.currentLine < 0 || self.currentLine >= (NSInteger)self.lines.count) {
+        [t setContentOffset:CGPointMake(0, -t.contentInset.top) animated:animated];
+        return;
+    }
+    CGRect r = [t rectForRowAtIndexPath:[NSIndexPath indexPathForRow:self.currentLine inSection:0]];
+    [t setContentOffset:CGPointMake(0, floorf(CGRectGetMidY(r) - t.bounds.size.height * 0.4f)) animated:animated];
 }
 
 - (void)showTrack:(S6Track *)track
@@ -60,6 +83,7 @@
         self.lines = lines;
         self.message = lines.count ? nil : (error.code == 404 || !error ? L(@"No lyrics for this song.") : error.localizedDescription);
         [self.tableView reloadData];
+        [self scrollToCurrentAnimated:NO];
         [self tick];
     }];
 }
@@ -79,12 +103,15 @@
     if (old >= 0 && old < (NSInteger)self.lines.count) [rows addObject:[NSIndexPath indexPathForRow:old inSection:0]];
     if (line >= 0) [rows addObject:[NSIndexPath indexPathForRow:line inSection:0]];
     [self.tableView reloadRowsAtIndexPaths:rows withRowAnimation:UITableViewRowAnimationNone];
-    if (line >= 0 && !self.tableView.isDragging && !self.tableView.isDecelerating) {
-        [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:line inSection:0] atScrollPosition:UITableViewScrollPositionMiddle animated:YES];
-    }
+    if (!self.tableView.isDragging && !self.tableView.isDecelerating) [self scrollToCurrentAnimated:YES];
 }
 
-- (UIFont *)lineFont { return [UIFont fontWithName:@"HelveticaNeue-Bold" size:S6IsPad() ? 24 : 19] ?: [UIFont boldSystemFontOfSize:20]; }
+// (smaller on a 3.5" screen: more of the song fits in the little panel)
+- (UIFont *)lineFont
+{
+    CGFloat size = S6IsPad() ? 24 : ([UIScreen mainScreen].bounds.size.height < 500 ? 17 : 19);
+    return [UIFont fontWithName:@"HelveticaNeue-Bold" size:size] ?: [UIFont boldSystemFontOfSize:size];
+}
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -96,7 +123,7 @@
     if (self.message) return 80;
     NSString *text = self.lines[(NSUInteger)indexPath.row][@"text"];
     CGSize s = [text.length ? text : @" " sizeWithFont:[self lineFont] constrainedToSize:CGSizeMake(tableView.bounds.size.width - 40, 400) lineBreakMode:NSLineBreakByWordWrapping];
-    return ceilf(s.height) + 14;
+    return ceilf(s.height) + 12;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -135,6 +162,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 
 @interface S6QueueViewController ()
 @property (nonatomic, strong) NSArray *upcoming;
+@property (nonatomic, strong) UIButton *editButton;
 - (void)refresh;
 @end
 
@@ -153,15 +181,29 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     self.tableView.separatorColor = [UIColor colorWithWhite:1 alpha:0.08];
     self.tableView.rowHeight = 56;
     [self.tableView registerClass:[S6TrackCell class] forCellReuseIdentifier:@"track"];
+    UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 40)];
+    self.editButton = [[S6Theme shared] outlineButtonWithTitle:L(@"Edit")];
+    self.editButton.frame = CGRectMake(320 - 96, 6, 86, 28);
+    self.editButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+    [self.editButton addTarget:self action:@selector(toggleEditing) forControlEvents:UIControlEventTouchUpInside];
+    [header addSubview:self.editButton];
+    self.tableView.tableHeaderView = header;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refresh) name:S6PlayerDidChangeNotification object:nil];
     [self refresh];
 }
 
 - (void)dealloc { [[NSNotificationCenter defaultCenter] removeObserver:self]; }
 
+- (void)toggleEditing
+{
+    [self.tableView setEditing:!self.tableView.editing animated:YES];
+    [self.editButton setTitle:[(self.tableView.editing ? L(@"Done") : L(@"Edit")) uppercaseString] forState:UIControlStateNormal];
+}
+
 - (void)refresh
 {
-    self.upcoming = [[S6Player shared] upcomingTracks:50];
+    if (self.tableView.editing) return;   // (the rows stay while they are moved)
+    self.upcoming = [[S6Player shared] upcomingTracks:100];
     [self.tableView reloadData];
 }
 
@@ -202,14 +244,47 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     cell.showsArt = YES;
     [cell showTrack:[self trackAt:indexPath] number:0];
     cell.moreButton.hidden = YES;
+    cell.showsReorderControl = YES;
     return cell;
 }
 
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath { return indexPath.section == S6QueueUser; }
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath { return indexPath.section != S6QueueNow; }
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath { return indexPath.section != S6QueueNow; }
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)from toProposedIndexPath:(NSIndexPath *)to
+{
+    // (a song moves within its own part of the queue)
+    if (to.section == from.section) return to;
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:from.section];
+    return [NSIndexPath indexPathForRow:to.section < from.section ? 0 : MAX(0, rows - 1) inSection:from.section];
+}
+
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)from toIndexPath:(NSIndexPath *)to
+{
+    S6Player *p = [S6Player shared];
+    if (from.section == S6QueueUser) [p moveQueueItemFrom:(NSUInteger)from.row to:(NSUInteger)to.row];
+    else if (from.section == S6QueueNext) {
+        [p moveUpcomingFrom:(NSUInteger)from.row to:(NSUInteger)to.row];
+        NSMutableArray *u = [self.upcoming mutableCopy];
+        id x = u[(NSUInteger)from.row];
+        [u removeObjectAtIndex:(NSUInteger)from.row];
+        [u insertObject:x atIndex:(NSUInteger)to.row];
+        self.upcoming = u;
+    }
+}
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (editingStyle == UITableViewCellEditingStyleDelete) [[S6Player shared] removeFromQueueAtIndex:(NSUInteger)indexPath.row];
+    if (editingStyle != UITableViewCellEditingStyleDelete) return;
+    S6Player *p = [S6Player shared];
+    if (indexPath.section == S6QueueUser) [p removeFromQueueAtIndex:(NSUInteger)indexPath.row];
+    else if (indexPath.section == S6QueueNext) {
+        [p removeUpcomingAtIndex:(NSUInteger)indexPath.row];
+        NSMutableArray *u = [self.upcoming mutableCopy];
+        [u removeObjectAtIndex:(NSUInteger)indexPath.row];
+        self.upcoming = u;
+    }
+    [tableView deleteRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationFade];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath { return L(@"Remove"); }
@@ -244,6 +319,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 @property (nonatomic, strong) UIButton *repeatButton;
 @property (nonatomic, strong) UIButton *lyricsButton;
 @property (nonatomic, strong) UIButton *queueButton;
+@property (nonatomic, strong) UIButton *sleepButton;
 @property (nonatomic, strong) UIActivityIndicatorView *spinner;
 @property (nonatomic, strong) MPVolumeView *volume;
 @property (nonatomic, strong) S6LyricsViewController *lyrics;
@@ -314,6 +390,8 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     self.closeButton = [self button:S6IconChevronDown size:24 action:@selector(close)];
     self.closeButton.accessibilityLabel = L(@"Close");
     self.moreButton = [self button:S6IconMore size:22 action:@selector(more)];
+    self.sleepButton = [self button:S6IconMoon size:20 action:@selector(sleepTimer)];
+    self.sleepButton.accessibilityLabel = L(@"Sleep timer");
     self.contextLabel = [self label:[theme sectionFont] color:[theme secondaryTextColor]];
     self.contextLabel.numberOfLines = 2;
     self.titleLabel = [self label:[UIFont fontWithName:@"HelveticaNeue-Bold" size:S6IsPad() ? 24 : 19] ?: [UIFont boldSystemFontOfSize:20] color:[UIColor whiteColor]];
@@ -392,7 +470,8 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     if (top < 20 && S6ModernIOS()) top = 20;
     self.closeButton.frame = CGRectMake(8, top + 4, 44, 44);
     self.moreButton.frame = CGRectMake(s.width - 52, top + 4, 44, 44);
-    self.contextLabel.frame = CGRectMake(60, top + 6, s.width - 120, 36);
+    self.sleepButton.frame = CGRectMake(s.width - 96, top + 4, 44, 44);
+    self.contextLabel.frame = CGRectMake(104, top + 6, s.width - 208, 36);
     CGFloat controlsH = S6IsPad() ? 250 : 210;
     if (landscape && S6IsPad()) {
         // the cover (or lyrics/queue) on the left, everything else on the right
@@ -515,7 +594,19 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
         self.elapsedLabel.text = S6FormatDurationMs(position);
         self.remainingLabel.text = duration > 0 ? [@"-" stringByAppendingString:S6FormatDurationMs(MAX(0, duration - position))] : @"";
     }
-    self.formatLabel.text = player.formatName ?: @"";
+    NSString *format = player.formatName ?: @"";
+    NSString *sleep = nil;
+    if (player.sleepAtEndOfSong) sleep = L(@"Sleep: end of song");
+    else if (player.sleepAt) sleep = [NSString stringWithFormat:L(@"Sleep: %@"), S6FormatDurationMs((NSInteger)MAX(0, [player.sleepAt timeIntervalSinceNow] * 1000))];
+    self.formatLabel.text = sleep ? (format.length ? [NSString stringWithFormat:@"%@ • %@", format, sleep] : sleep) : format;
+    BOOL sleeping = sleep != nil;
+    if (sleeping != self.sleepButton.selected) {
+        self.sleepButton.selected = sleeping;
+        S6Theme *theme = [S6Theme shared];
+        UIImage *moon = [theme icon:S6IconMoon size:20 color:sleeping ? [theme accentColor] : [UIColor whiteColor]];
+        [self.sleepButton setImage:moon forState:UIControlStateNormal];
+        [self.sleepButton setImage:moon forState:UIControlStateSelected];
+    }
     if (player.buffering && player.playing) { [self.spinner startAnimating]; self.playButton.alpha = 0.15; }
     else { [self.spinner stopAnimating]; self.playButton.alpha = 1; }
     if (self.panel == S6NowPlayingLyrics) [self.lyrics tick];
@@ -562,6 +653,8 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     S6Track *t = [S6Player shared].currentTrack;
     if (t) [S6Router showActionsForTrack:t fromView:self.moreButton inController:self playlist:nil];
 }
+
+- (void)sleepTimer { [S6Router showSleepTimerFromView:self.sleepButton inController:self]; }
 
 - (void)scrubStarted { self.scrubbing = YES; }
 

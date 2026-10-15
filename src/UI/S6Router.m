@@ -19,6 +19,20 @@
 
 @implementation S6ActionSheet
 
+static __weak S6ActionSheet *S6ShownSheet;
+
++ (BOOL)pressButtonTitled:(NSString *)title
+{
+    S6ActionSheet *s = S6ShownSheet;
+    if (!s.sheet.visible) return NO;
+    for (NSInteger i = 0; i < s.sheet.numberOfButtons; i++) {
+        if (![[s.sheet buttonTitleAtIndex:i] isEqualToString:title]) continue;
+        [s.sheet dismissWithClickedButtonIndex:i animated:NO];
+        return YES;
+    }
+    return NO;
+}
+
 - (instancetype)initWithTitle:(NSString *)title
 {
     if ((self = [super init])) {
@@ -46,6 +60,7 @@
     self.sheet.cancelButtonIndex = [self.sheet addButtonWithTitle:L(@"Cancel")];
     [self.actions addObject:[NSNull null]];
     self.keepAlive = self;
+    S6ShownSheet = self;
     if (S6IsPad() && view.window) [self.sheet showFromRect:view.bounds inView:view animated:YES];
     else [self.sheet showInView:controller.view.window ?: controller.view];
 }
@@ -62,6 +77,33 @@
 @end
 
 @implementation S6Router
+
++ (void)showSleepTimerFromView:(UIView *)view inController:(UIViewController *)controller
+{
+    S6Player *player = [S6Player shared];
+    NSString *title = L(@"Sleep timer");
+    if (player.sleepAtEndOfSong) title = L(@"The music stops at the end of this song.");
+    else if (player.sleepAt) title = [NSString stringWithFormat:L(@"The music stops in %@."), S6FormatDurationMs((NSInteger)([player.sleepAt timeIntervalSinceNow] * 1000))];
+    S6ActionSheet *sheet = [[S6ActionSheet alloc] initWithTitle:title];
+    for (NSNumber *n in @[ @5, @10, @15, @30, @45, @60, @90 ]) {
+        NSInteger minutes = [n integerValue];
+        [sheet addButton:[NSString stringWithFormat:L(@"%ld minutes"), (long)minutes] action:^{
+            [player setSleepTimerMinutes:minutes];
+            [self toast:[NSString stringWithFormat:L(@"The music stops in %ld minutes"), (long)minutes]];
+        }];
+    }
+    [sheet addButton:L(@"End of this song") action:^{
+        [player setSleepTimerMinutes:-1];
+        [self toast:L(@"The music stops at the end of this song")];
+    }];
+    if (player.sleepAt || player.sleepAtEndOfSong) {
+        [sheet addDestructiveButton:L(@"Turn the timer off") action:^{
+            [player setSleepTimerMinutes:0];
+            [self toast:L(@"Sleep timer off")];
+        }];
+    }
+    [sheet showFromView:view inController:controller];
+}
 
 + (void)push:(UIViewController *)controller
 {

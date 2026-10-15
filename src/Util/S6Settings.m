@@ -15,6 +15,7 @@ static const NSUInteger S6MaxRecentSearches = 12;
         @"quality": @(S6QualityVeryHigh),
         @"normalize": @YES,
         @"crossfade": @0,
+        @"dataSaver": @YES,
         @"autoplay": @YES,
         @"darkTheme": @YES,
         @"verifyTLS": @YES,
@@ -102,6 +103,8 @@ static const NSUInteger S6MaxRecentSearches = 12;
 
 + (NSInteger)crossfadeSeconds { return MAX(0, MIN(12, [DEF integerForKey:@"crossfade"])); }
 + (void)setCrossfadeSeconds:(NSInteger)value { [DEF setInteger:MAX(0, MIN(12, value)) forKey:@"crossfade"]; [self notify]; }
++ (BOOL)dataSaver { return [DEF boolForKey:@"dataSaver"]; }
++ (void)setDataSaver:(BOOL)value { [DEF setBool:value forKey:@"dataSaver"]; [self notify]; }
 
 + (BOOL)autoplay { return [DEF boolForKey:@"autoplay"]; }
 + (void)setAutoplay:(BOOL)value { [DEF setBool:value forKey:@"autoplay"]; [self notify]; }

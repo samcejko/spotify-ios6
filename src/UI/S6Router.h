@@ -8,6 +8,7 @@
 - (void)addButton:(NSString *)title action:(dispatch_block_t)action;
 - (void)addDestructiveButton:(NSString *)title action:(dispatch_block_t)action;
 - (void)showFromView:(UIView *)view inController:(UIViewController *)controller;
++ (BOOL)pressButtonTitled:(NSString *)title;      // the sheet on screen (debug commands)
 @end
 
 // Going places: album, artist, playlist and show pages, Spotify links, the actions of a song, now playing
@@ -27,6 +28,7 @@
                    playlist:(S6Playlist *)playlist;          // `playlist`: it is in this playlist (removing becomes possible)
 + (void)addTrackToPlaylist:(S6Track *)track;
 + (void)showNowPlaying;
++ (void)showSleepTimerFromView:(UIView *)view inController:(UIViewController *)controller;
 + (void)toast:(NSString *)text;                    // a short note in the middle of the screen
 
 @end

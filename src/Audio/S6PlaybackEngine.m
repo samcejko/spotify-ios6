@@ -123,6 +123,8 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
     uint64_t _framesWritten;            // into the output since its last flush
     BOOL _drained;                      // the last item is all decoded; finished once played
     S6AudioOutput *_output;
+    S6PlaybackItem *_fadeNext;          // crossfading: the next song coming in under the end of this one
+    uint64_t _fadeLength, _fadeDone;    // frames
 }
 
 + (instancetype)shared
@@ -162,6 +164,8 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
     self.currentItem = item;
     S6PlaybackItem *oldNext = self.nextItem;
     self.nextItem = nil;
+    S6PlaybackItem *oldFade = _fadeNext;
+    _fadeNext = nil;
     _drained = NO;
     _framesWritten = 0;
     _pendingSeekMs = startMs > 0 ? startMs : -1;
@@ -174,6 +178,7 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
     [_cond unlock];
     if (old != item) [old cancel];
     if (oldNext != item) [oldNext cancel];
+    if (oldFade && oldFade != item) [oldFade cancel];
     if (!paused) [_output play];
     [self.delegate engineDidStartItem:item];
 }
@@ -217,6 +222,12 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
         dropped = _decodingItem;
         self.currentItem.askedForNext = NO;
     }
+    if (_fadeNext) {
+        // (a seek in the middle of a crossfade: the next song is loaded again when its time comes)
+        dropped = _fadeNext;
+        _fadeNext = nil;
+        self.currentItem.askedForNext = NO;
+    }
     _decodingItem = self.currentItem;
     _drained = NO;
     [_output flush];                      // wakes a writer waiting for room
@@ -232,6 +243,8 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
     _generation++;
     old = self.currentItem;
     oldNext = self.nextItem;
+    S6PlaybackItem *oldFade = _fadeNext;
+    _fadeNext = nil;
     _decodingItem = nil;
     self.currentItem = nil;
     self.nextItem = nil;
@@ -240,6 +253,7 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
     [_cond unlock];
     [old cancel];
     [oldNext cancel];
+    [oldFade cancel];
 }
 
 - (NSInteger)positionMs
@@ -297,6 +311,7 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
 - (void)decodeLoop
 {
     int16_t *buffer = malloc(S6ChunkFrames * 4);
+    int16_t *mix = malloc(S6ChunkFrames * 4);
     while (YES) {
         @autoreleasepool {
             [_cond lock];
@@ -324,6 +339,8 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
                 if (play) [_output play];
                 continue;
             }
+
+            if ([self crossfadeStep:item buffer:buffer mix:mix generation:generation outputGeneration:outputGeneration]) continue;
 
             NSInteger n = [item.decoder readFrames:buffer max:S6ChunkFrames gain:item.gain];
             if (n > 0) {
@@ -365,6 +382,63 @@ static NSArray *S6PickFile(NSData *message, uint32_t filesField, S6Quality quali
             if (n == 0 && item.decoder.starved) usleep(20000);
         }
     }
+}
+
+// Crossfading (Settings): once the song is within the fade's length of its end and the next one is ready, both are
+// decoded and mixed (equal power) until this one ends; the next one then simply goes on. YES when this step was a fade.
+- (BOOL)crossfadeStep:(S6PlaybackItem *)item buffer:(int16_t *)buffer mix:(int16_t *)mix generation:(uint64_t)generation outputGeneration:(uint64_t)outputGeneration
+{
+    NSInteger seconds = [S6Settings crossfadeSeconds];
+    S6PlaybackItem *fade;
+    [_cond lock];
+    if (!_fadeNext && seconds > 0 && generation == _generation && _decodingItem == item) {
+        S6PlaybackItem *next = self.nextItem;
+        uint64_t rate = (uint64_t)(item.decoder.sampleRate ?: 44100);
+        uint64_t total = item.decoder.totalFrames, length = (uint64_t)seconds * rate;
+        if (next && next.decoder.sampleRate == item.decoder.sampleRate && total > length * 3 && item.decoder.frame + length >= total) {
+            self.nextItem = nil;
+            _fadeNext = next;
+            _fadeLength = MAX((uint64_t)1, total - item.decoder.frame);
+            _fadeDone = 0;
+            next.outputStart = _framesWritten;
+            next.baseFrame = next.decoder.frame;
+        }
+    }
+    fade = _fadeNext;
+    [_cond unlock];
+    if (!fade) return NO;
+    NSInteger n = [item.decoder readFrames:buffer max:S6ChunkFrames gain:item.gain];
+    if (n > 0) {
+        NSInteger m = [fade.decoder readFrames:mix max:(NSUInteger)n gain:fade.gain];
+        if (m < 0) m = 0;
+        if (m < n) memset(mix + m * 2, 0, (size_t)(n - m) * 4);
+        for (NSInteger i = 0; i < n; i++) {
+            float p = (float)(_fadeDone + (uint64_t)i) / (float)_fadeLength;
+            if (p > 1.f) p = 1.f;
+            float a = sqrtf(1.f - p), b = sqrtf(p);
+            for (int c = 0; c < 2; c++) {
+                float v = (float)buffer[i * 2 + c] * a + (float)mix[i * 2 + c] * b;
+                buffer[i * 2 + c] = (int16_t)(v > 32767.f ? 32767.f : (v < -32768.f ? -32768.f : v));
+            }
+        }
+        _fadeDone += (uint64_t)n;
+        NSUInteger written = [_output write:buffer count:(NSUInteger)n generation:outputGeneration];
+        [_cond lock];
+        if (generation == _generation && outputGeneration == _output.generation) _framesWritten += written;
+        [_cond unlock];
+    }
+    if (n < 0 || item.decoder.atEnd || _fadeDone >= _fadeLength) {
+        // this song is over: the next one goes on by itself
+        [_cond lock];
+        if (generation == _generation && _decodingItem == item && _fadeNext == fade) {
+            _decodingItem = fade;
+            _fadeNext = nil;
+        }
+        [_cond unlock];
+    } else if (n == 0 && item.decoder.starved) {
+        usleep(20000);
+    }
+    return YES;
 }
 
 - (NSString *)debugState

@@ -28,8 +28,8 @@
     [super viewDidLoad];
     [self.tableView registerClass:[S6ShelfCell class] forCellReuseIdentifier:@"shelf"];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 64)];
-    self.greeting = [[UILabel alloc] initWithFrame:CGRectMake(14, 16, self.view.bounds.size.width - 28, 36)];
+    UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 64)];
+    self.greeting = [[UILabel alloc] initWithFrame:CGRectMake(14, 16, 292, 36)];
     self.greeting.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     self.greeting.font = [[S6Theme shared] headerFont];
     self.greeting.textColor = [[S6Theme shared] primaryTextColor];
@@ -42,6 +42,19 @@
 }
 
 - (void)dealloc { [[NSNotificationCenter defaultCenter] removeObserver:self]; }
+
+// (the view has no width yet in viewDidLoad on newer iOS: the greeting is placed once the table has one)
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    CGFloat w = self.tableView.bounds.size.width;
+    UIView *header = self.tableView.tableHeaderView;
+    if (w > 0 && fabs(header.bounds.size.width - w) > 1) {
+        header.frame = CGRectMake(0, 0, w, 64);
+        self.greeting.frame = CGRectMake(14, 16, w - 28, 36);
+        self.tableView.tableHeaderView = header;
+    }
+}
 
 - (void)sessionChanged
 {

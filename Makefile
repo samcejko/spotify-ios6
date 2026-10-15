@@ -25,7 +25,7 @@ Spot6_FILES := $(wildcard src/*.m) $(wildcard src/*/*.m) $(wildcard src/*/*.c) \
                vendor/mbedtls_glue.c vendor/s6_stb_vorbis.c \
                $(wildcard vendor/mbedtls/library/*.c)
 
-Spot6_FRAMEWORKS := UIKit Foundation CoreGraphics QuartzCore CoreText Security ImageIO AVFoundation CoreMedia MediaPlayer AudioToolbox
+Spot6_FRAMEWORKS := UIKit Foundation CoreGraphics QuartzCore CoreText Security ImageIO AVFoundation CoreMedia MediaPlayer AudioToolbox SystemConfiguration
 
 # Flags for every C-family file (also the vendored mbedTLS sources)
 Spot6_CFLAGS := -Isrc -Isrc/Net -Isrc/Spotify -Isrc/Audio -Isrc/UI -Isrc/Util \

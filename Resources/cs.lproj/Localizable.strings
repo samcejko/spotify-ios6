@@ -26,7 +26,6 @@
 "Artists you follow show up here." = "Tady budou interpreti, které sleduješ.";
 "Artists, songs or podcasts" = "Interpreti, skladby nebo podcasty";
 "Autoplay" = "Automatické přehrávání";
-"Autoplay: when your music runs out, similar songs keep playing." = "Automatické přehrávání: když hudba dohraje, pokračují podobné skladby.";
 "Bad address: %@" = "Chybná adresa: %@";
 "Browse all" = "Procházet vše";
 "by %@" = "od: %@";
@@ -218,3 +217,22 @@
 "Open in Surfari" = "Otevřít v Surfari";
 "Open in %@" = "Otevřít v aplikaci %@";
 "Open Link" = "Otevřít odkaz";
+
+/* Sleep timer, crossfade, data saver, queue editing */
+"%ld minutes" = "%ld minut";
+"%ld s" = "%ld s";
+"Crossfade" = "Prolínání";
+"Data saver" = "Úspora dat";
+"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing." = "Úspora dat: na mobilních datech hrají skladby v normální kvalitě (96 kbit/s). Prolínání plynule převede konec skladby do další. Automatické přehrávání: když hudba dojde, hrají dál podobné skladby.";
+"Done" = "Hotovo";
+"Edit" = "Upravit";
+"End of this song" = "Na konci této skladby";
+"Sleep timer" = "Časovač spánku";
+"Sleep timer off" = "Časovač spánku vypnut";
+"Sleep: %@" = "Spánek: %@";
+"Sleep: end of song" = "Spánek: konec skladby";
+"The music stops at the end of this song" = "Hudba skončí na konci této skladby";
+"The music stops at the end of this song." = "Hudba skončí na konci této skladby.";
+"The music stops in %@." = "Hudba skončí za %@.";
+"The music stops in %ld minutes" = "Hudba skončí za %ld minut";
+"Turn the timer off" = "Vypnout časovač";

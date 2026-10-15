@@ -5,6 +5,8 @@
 #import "S6Catalog.h"
 #import "S6ImageLoader.h"
 #import "S6Settings.h"
+#import "S6Reachability.h"
+#import "S6Utils.h"
 #import "S6Common.h"
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
@@ -23,6 +25,8 @@ static const NSInteger S6MaxSkipsOnError = 5;
 @property (nonatomic, copy) NSString *contextURI;
 @property (nonatomic, copy) NSString *contextName;
 @property (nonatomic, strong) NSMutableArray *queue;          // user queue
+@property (nonatomic, strong) NSDate *sleepAt;
+@property (nonatomic) BOOL sleepAtEndOfSong;
 @end
 
 @implementation S6Player {
@@ -40,6 +44,9 @@ static const NSInteger S6MaxSkipsOnError = 5;
     NSString *_artworkURL;
     UIImage *_artwork;
     BOOL _fetchingRadio;
+    NSTimer *_sleepTimer;
+    NSInteger _resumeMs;              // a restored song starts here (the place it was left at)
+    BOOL _saveScheduled;
 }
 
 + (instancetype)shared
@@ -60,13 +67,15 @@ static const NSInteger S6MaxSkipsOnError = 5;
         _engine = [S6PlaybackEngine shared];
         _engine.delegate = self;
         [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(updateNowPlaying) userInfo:nil repeats:YES];
+        // (the place in the song, every so often: iOS ends a background app without a word)
+        [NSTimer scheduledTimerWithTimeInterval:20.0 target:self selector:@selector(saveWhilePlaying) userInfo:nil repeats:YES];
     }
     return self;
 }
 
 - (NSArray *)userQueue { return [self.queue copy]; }
 - (BOOL)buffering { return self.loading || _engine.buffering; }
-- (NSInteger)positionMs { return _engine.currentItem ? _engine.positionMs : 0; }
+- (NSInteger)positionMs { return _engine.currentItem ? _engine.positionMs : _resumeMs; }
 - (NSInteger)durationMs { return _engine.currentItem.durationMs ?: self.currentTrack.durationMs; }
 - (NSString *)formatName { return _engine.currentItem.formatName; }
 
@@ -74,6 +83,13 @@ static const NSInteger S6MaxSkipsOnError = 5;
 {
     [[NSNotificationCenter defaultCenter] postNotificationName:S6PlayerDidChangeNotification object:self];
     [self updateNowPlaying];
+    [self scheduleSave];
+}
+
+// The quality to load: Normal (96 kbit/s) on mobile data with the data saver on, else the chosen one
+- (S6Quality)quality
+{
+    return [S6Settings dataSaver] && [S6Reachability onCellular] ? S6QualityNormal : [S6Settings quality];
 }
 
 #pragma mark - Context
@@ -119,6 +135,7 @@ static void S6Shuffle(NSMutableArray *a)
     [self buildOrderStartingWith:start];
     _currentFromQueue = NO;
     _failures = 0;
+    _resumeMs = 0;
     [self loadAndPlay:tracks[(NSUInteger)start] fromMs:positionMs paused:paused];
 }
 
@@ -242,7 +259,7 @@ static void S6Shuffle(NSMutableArray *a)
     self.playing = !paused;
     [_engine stop];
     [self changed];
-    S6Quality quality = [S6Settings quality];
+    S6Quality quality = [self quality];
     dispatch_async(_loadQueue, ^{
         NSError *error = nil;
         S6PlaybackItem *item = [S6PlaybackItem loadTrack:track quality:quality error:&error];
@@ -282,13 +299,14 @@ static void S6Shuffle(NSMutableArray *a)
 
 - (void)engineNeedsNextItem
 {
+    if (self.sleepAtEndOfSong) return;   // (the sleep timer ends with this song: nothing is prepared)
     BOOL fromQueue = NO;
     NSInteger position = -1;
     S6Track *next = [self peekNext:&fromQueue position:&position];
     if (!next || next == _preparedTrack) return;
     NSUInteger token = ++_prepareToken;
     _preparedTrack = next;
-    S6Quality quality = [S6Settings quality];
+    S6Quality quality = [self quality];
     dispatch_async(_loadQueue, ^{
         S6PlaybackItem *item = [S6PlaybackItem loadTrack:next quality:quality error:NULL];
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -314,6 +332,14 @@ static void S6Shuffle(NSMutableArray *a)
 
 - (void)engineDidFinishItem:(S6PlaybackItem *)item
 {
+    if (self.sleepAtEndOfSong) {
+        [self setSleepTimerMinutes:0];
+        self.playing = NO;
+        [_engine stop];
+        _resumeMs = 0;
+        [self changed];
+        return;
+    }
     [self advanceAutomatically:YES];
 }
 
@@ -398,7 +424,11 @@ static void S6Shuffle(NSMutableArray *a)
     if (!self.currentTrack) return;
     self.playing = YES;
     if (_engine.currentItem) [_engine resume];
-    else if (!self.loading) [self loadAndPlay:self.currentTrack];
+    else if (!self.loading) {
+        NSInteger from = _resumeMs;
+        _resumeMs = 0;
+        [self loadAndPlay:self.currentTrack fromMs:from paused:NO];
+    }
     [self changed];
 }
 
@@ -443,6 +473,7 @@ static void S6Shuffle(NSMutableArray *a)
 
 - (void)seekToMs:(NSInteger)ms
 {
+    if (!_engine.currentItem && self.currentTrack) _resumeMs = MAX(0, ms);   // (a restored song not started yet)
     [_engine seekToMs:ms];
     [self changed];
 }
@@ -493,6 +524,149 @@ static void S6Shuffle(NSMutableArray *a)
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = info;
 }
 
+- (void)saveWhilePlaying { if (self.playing && _engine.currentItem) [self saveState]; }
+
+#pragma mark - Sleep timer
+
+- (void)setSleepTimerMinutes:(NSInteger)minutes
+{
+    [_sleepTimer invalidate];
+    _sleepTimer = nil;
+    self.sleepAt = nil;
+    self.sleepAtEndOfSong = minutes < 0;
+    if (minutes > 0) {
+        self.sleepAt = [NSDate dateWithTimeIntervalSinceNow:minutes * 60];
+        _sleepTimer = [NSTimer scheduledTimerWithTimeInterval:minutes * 60 target:self selector:@selector(sleepNow) userInfo:nil repeats:NO];
+    }
+    if (minutes < 0) [self dropPrepared];
+    [self changed];
+}
+
+- (void)sleepNow
+{
+    _sleepTimer = nil;
+    self.sleepAt = nil;
+    [self pause];
+}
+
+#pragma mark - Editing the queue
+
+- (void)moveQueueItemFrom:(NSUInteger)from to:(NSUInteger)to
+{
+    if (from >= self.queue.count || to >= self.queue.count || from == to) return;
+    id t = self.queue[from];
+    [self.queue removeObjectAtIndex:from];
+    [self.queue insertObject:t atIndex:to];
+    [self dropPrepared];
+    [self changed];
+}
+
+- (void)moveUpcomingFrom:(NSUInteger)from to:(NSUInteger)to
+{
+    NSInteger a = _orderPos + 1 + (NSInteger)from, b = _orderPos + 1 + (NSInteger)to;
+    if (a < 0 || b < 0 || a >= (NSInteger)_order.count || b >= (NSInteger)_order.count || a == b) return;
+    id x = _order[(NSUInteger)a];
+    [_order removeObjectAtIndex:(NSUInteger)a];
+    [_order insertObject:x atIndex:(NSUInteger)b];
+    [self dropPrepared];
+    [self changed];
+}
+
+- (void)removeUpcomingAtIndex:(NSUInteger)index
+{
+    NSInteger a = _orderPos + 1 + (NSInteger)index;
+    if (a < 0 || a >= (NSInteger)_order.count) return;
+    [_order removeObjectAtIndex:(NSUInteger)a];
+    [self dropPrepared];
+    [self changed];
+}
+
+#pragma mark - Where it was left (kept between launches)
+
++ (NSString *)statePath
+{
+    NSString *base = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *dir = [base stringByAppendingPathComponent:@"Spot6"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    return [dir stringByAppendingPathComponent:@"queue.json"];
+}
+
+static NSArray *S6JSONTracks(NSArray *tracks)
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (S6Track *t in tracks) { NSDictionary *j = [t toJSON]; if (j) [out addObject:j]; }
+    return out;
+}
+
+- (void)scheduleSave
+{
+    if (_saveScheduled) return;
+    _saveScheduled = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self->_saveScheduled = NO;
+        [self saveState];
+    });
+}
+
+- (void)saveState
+{
+    S6Track *current = self.currentTrack;
+    if (!current) { [[NSFileManager defaultManager] removeItemAtPath:[S6Player statePath] error:NULL]; return; }
+    NSArray *context = _contextTracks ?: @[];
+    NSArray *order = _order ?: @[];
+    NSInteger pos = _orderPos;
+    if (context.count > 1500) {
+        // (a huge context: the song and what follows in play order are enough)
+        NSMutableArray *window = [NSMutableArray array];
+        for (NSInteger p = MAX(0, pos); p < (NSInteger)order.count && window.count < 500; p++) [window addObject:context[[order[(NSUInteger)p] unsignedIntegerValue]]];
+        context = window;
+        NSMutableArray *o = [NSMutableArray array];
+        for (NSUInteger i = 0; i < window.count; i++) [o addObject:@(i)];
+        order = o;
+        pos = pos >= 0 ? 0 : -1;
+    }
+    NSInteger position = _engine.currentItem ? self.positionMs : _resumeMs;
+    NSDictionary *state = @{ @"context": S6JSONTracks(context), @"order": [order copy], @"pos": @(pos), @"queue": S6JSONTracks(self.queue),
+                             @"current": [current toJSON] ?: @{}, @"fromQueue": @(_currentFromQueue), @"ms": @(position),
+                             @"uri": self.contextURI ?: @"", @"name": self.contextName ?: @"", @"shuffle": @(self.shuffle), @"repeat": @(self.repeat) };
+    NSString *path = [S6Player statePath];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+        [[S6Utils JSONDataFromObject:state] writeToFile:path atomically:YES];
+    });
+}
+
+- (void)restoreState
+{
+    if (self.currentTrack) return;   // (something plays already, handed over by Spotify Connect say)
+    NSDictionary *s = S6Dict([S6Utils JSONObjectFromData:[NSData dataWithContentsOfFile:[S6Player statePath]]]);
+    S6Track *current = [S6Track trackFromJSON:S6Dict(s[@"current"])];
+    if (!current) return;
+    NSMutableArray *context = [NSMutableArray array];
+    for (id j in S6Arr(s[@"context"]) ?: @[]) { S6Track *t = [S6Track trackFromJSON:S6Dict(j)]; if (t) [context addObject:t]; }
+    NSMutableArray *order = [NSMutableArray array];
+    for (id n in S6Arr(s[@"order"]) ?: @[]) if ([n integerValue] >= 0 && [n unsignedIntegerValue] < context.count) [order addObject:@([n unsignedIntegerValue])];
+    if (order.count != context.count) { [order removeAllObjects]; for (NSUInteger i = 0; i < context.count; i++) [order addObject:@(i)]; }
+    _contextTracks = context;
+    _order = order;
+    _orderPos = MIN((NSInteger)order.count - 1, S6Int(s[@"pos"]));
+    // (the current song is the same object as its place in the context, so the list shows it as playing)
+    if (_orderPos >= 0 && !S6Bool(s[@"fromQueue"])) {
+        S6Track *atPos = context[[order[(NSUInteger)_orderPos] unsignedIntegerValue]];
+        if ([atPos.uri isEqualToString:current.uri]) current = atPos;
+    }
+    for (id j in S6Arr(s[@"queue"]) ?: @[]) { S6Track *t = [S6Track trackFromJSON:S6Dict(j)]; if (t) [self.queue addObject:t]; }
+    _currentFromQueue = S6Bool(s[@"fromQueue"]);
+    _shuffle = S6Bool(s[@"shuffle"]);
+    _repeat = (S6RepeatMode)S6Int(s[@"repeat"]);
+    self.contextURI = S6Str(s[@"uri"]);
+    self.contextName = S6Str(s[@"name"]);
+    self.currentTrack = current;
+    _resumeMs = S6Int(s[@"ms"]);
+    self.playing = NO;
+    S6Log(@"restored %@ at %.0f s, %lu songs around it", current.name, _resumeMs / 1000.0, (unsigned long)context.count);
+    [[NSNotificationCenter defaultCenter] postNotificationName:S6PlayerDidChangeNotification object:self];
+    [self updateNowPlaying];
+}
 - (NSString *)debugState
 {
     return [NSString stringWithFormat:@"player: %@ (%@), %@, context %@ (%ld/%lu), queue %lu, shuffle %d, repeat %ld | %@",

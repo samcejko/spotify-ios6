@@ -54,6 +54,18 @@ extern NSString * const S6PlayerDidFailNotification;        // userInfo[@"error"
 - (void)replaceQueue:(NSArray *)tracks;
 @property (nonatomic, readonly) NSArray *contextTracks;    // the context in its own order
 @property (nonatomic, readonly) NSInteger contextIndex;    // the current song's place in it (-1: from the queue / none)
+- (void)moveQueueItemFrom:(NSUInteger)from to:(NSUInteger)to;
+- (void)moveUpcomingFrom:(NSUInteger)from to:(NSUInteger)to;   // indices as in -upcomingTracks:
+- (void)removeUpcomingAtIndex:(NSUInteger)index;
+
+// The sleep timer: minutes from now (0: off, -1: at the end of this song)
+- (void)setSleepTimerMinutes:(NSInteger)minutes;
+@property (nonatomic, readonly) NSDate *sleepAt;
+@property (nonatomic, readonly) BOOL sleepAtEndOfSong;
+
+// The queue and the place in the song are kept between launches (it comes back paused)
+- (void)saveState;
+- (void)restoreState;
 
 - (void)handleRemoteEvent:(UIEvent *)event;              // from the app delegate
 - (NSString *)debugState;

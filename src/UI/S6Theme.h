@@ -30,6 +30,7 @@ typedef NS_ENUM(NSInteger, S6Icon) {
     S6IconSpeaker,
     S6IconClock,
     S6IconCheck,
+    S6IconMoon,              // the sleep timer
 };
 
 // The look of Spot6: Spotify's own iPad app of the iOS 6 years - charcoal, textured panels, glossy black bars, the

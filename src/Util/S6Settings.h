@@ -33,6 +33,8 @@ typedef NS_ENUM(NSInteger, S6Quality) {
 + (void)setNormalize:(BOOL)value;
 + (NSInteger)crossfadeSeconds;           // 0 = off
 + (void)setCrossfadeSeconds:(NSInteger)value;
++ (BOOL)dataSaver;                       // on mobile data the Normal quality (96 kbit/s) whatever is chosen
++ (void)setDataSaver:(BOOL)value;
 + (BOOL)autoplay;                        // when the music runs out, similar songs follow
 + (void)setAutoplay:(BOOL)value;
 

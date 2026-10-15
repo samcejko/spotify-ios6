@@ -94,6 +94,7 @@ static BOOL S6PressView(UIView *v, NSString *text)
     [self.window makeKeyAndVisible];
     [application setStatusBarStyle:UIStatusBarStyleBlackOpaque animated:NO];
 
+    [[S6Player shared] restoreState];   // (the queue and the place in the song from last time, paused)
     [S6Connect shared];   // (Spotify Connect starts by itself once the session is ready)
     [[S6Session shared] start];
     [[S6Zeroconf shared] start];
@@ -108,7 +109,13 @@ static BOOL S6PressView(UIView *v, NSString *text)
     if (![S6Zeroconf shared].running) [[S6Zeroconf shared] start];
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application { [S6Settings save]; }
+- (void)applicationDidEnterBackground:(UIApplication *)application
+{
+    [S6Settings save];
+    [[S6Player shared] saveState];
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application { [[S6Player shared] saveState]; }
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application { [[S6ImageLoader shared] clearMemory]; }
 
@@ -239,6 +246,11 @@ static BOOL S6PressView(UIView *v, NSString *text)
             UIGraphicsEndImageContext();
         }
         S6Log(@"%@ %@: %@", target, ok ? @"written" : @"failed", path);
+        return YES;
+    }
+    if ([target isEqualToString:@"sheet"]) {
+        // a button of the menu on screen (iOS 7 and newer keep action sheets out of the view tree, where press looks)
+        S6Log(@"Sheet %@: %@", params[@"title"], [S6ActionSheet pressButtonTitled:params[@"title"] ?: @""] ? @"done" : @"nothing found");
         return YES;
     }
     if ([target isEqualToString:@"press"]) {

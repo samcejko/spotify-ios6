@@ -211,7 +211,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 {
     switch (section) {
         case S6SetAccount: return 3;
-        case S6SetPlayback: return 3;
+        case S6SetPlayback: return 5;
         case S6SetDevice: return 3;
         case S6SetStorage: return 1;
         case S6SetAbout: return 3;
@@ -235,7 +235,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 - (NSString *)footerFor:(NSInteger)section
 {
     switch (section) {
-        case S6SetPlayback: return L(@"Autoplay: when your music runs out, similar songs keep playing.");
+        case S6SetPlayback: return L(@"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing.");
         case S6SetDevice: return L(@"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Spot6 is open, your devices can see it.");
         case S6SetAbout: return L(@"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify.");
     }
@@ -313,8 +313,16 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
                 cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                 cell.selectionStyle = UITableViewCellSelectionStyleGray;
             }
-            if (row == 1) { cell.textLabel.text = L(@"Normalize volume"); cell.accessoryView = [self switchOn:[S6Settings normalize] action:@selector(normalizeChanged:)]; }
-            if (row == 2) { cell.textLabel.text = L(@"Autoplay"); cell.accessoryView = [self switchOn:[S6Settings autoplay] action:@selector(autoplayChanged:)]; }
+            if (row == 1) { cell.textLabel.text = L(@"Data saver"); cell.accessoryView = [self switchOn:[S6Settings dataSaver] action:@selector(dataSaverChanged:)]; }
+            if (row == 2) { cell.textLabel.text = L(@"Normalize volume"); cell.accessoryView = [self switchOn:[S6Settings normalize] action:@selector(normalizeChanged:)]; }
+            if (row == 3) {
+                cell.textLabel.text = L(@"Crossfade");
+                NSInteger seconds = [S6Settings crossfadeSeconds];
+                cell.detailTextLabel.text = seconds ? [NSString stringWithFormat:L(@"%ld s"), (long)seconds] : L(@"Off");
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            }
+            if (row == 4) { cell.textLabel.text = L(@"Autoplay"); cell.accessoryView = [self switchOn:[S6Settings autoplay] action:@selector(autoplayChanged:)]; }
             break;
         case S6SetDevice:
             if (row == 0) {
@@ -368,6 +376,17 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
     switch (indexPath.section) {
         case S6SetPlayback:
             if (indexPath.row == 0) [self.navigationController pushViewController:[[S6QualityViewController alloc] init] animated:YES];
+            if (indexPath.row == 3) {
+                S6ActionSheet *sheet = [[S6ActionSheet alloc] initWithTitle:L(@"Crossfade")];
+                for (NSNumber *n in @[ @0, @3, @6, @9, @12 ]) {
+                    NSInteger seconds = [n integerValue];
+                    [sheet addButton:seconds ? [NSString stringWithFormat:L(@"%ld s"), (long)seconds] : L(@"Off") action:^{
+                        [S6Settings setCrossfadeSeconds:seconds];
+                        [self.tableView reloadData];
+                    }];
+                }
+                [sheet showFromView:[tableView cellForRowAtIndexPath:indexPath] inController:self];
+            }
             break;
         case S6SetDevice:
             if (indexPath.row == 0) {
@@ -422,6 +441,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 }
 
 - (void)normalizeChanged:(UISwitch *)s { [S6Settings setNormalize:s.on]; }
+- (void)dataSaverChanged:(UISwitch *)s { [S6Settings setDataSaver:s.on]; }
 - (void)autoplayChanged:(UISwitch *)s { [S6Settings setAutoplay:s.on]; }
 
 @end
