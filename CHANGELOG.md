@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2 (2026-10-16)
+
+- Sleep timer: the moon button in Now Playing stops the music after 5 to 90 minutes or at the end of the song; the
+  time left shows under the progress bar.
+- Crossfade (Settings → Playback): the end of a song blends into the next one over 3, 6, 9 or 12 seconds.
+- Data saver (Settings → Playback, on by default): on mobile data songs play in Normal quality (96 kbit/s), on Wi-Fi in
+  the quality you chose.
+- The queue can be edited: Edit in the queue moves songs around and removes them, also those coming from the album or
+  playlist.
+- The queue and the place in the song are kept when the app is closed: it opens paused where you left it.
+- Lyrics keep the line being sung in view, a little above the middle (on the small screen of a 3.5" iPhone it was at
+  the top edge, half cut off); slightly smaller lyrics on 3.5" screens.
+- The "Good evening" greeting on Home sits in its place on newer iOS.
+- The iOS 6 package declares iOS 6.x only.
 ## 0.2.1 (2026-10-14)
 
 - Links in playlist and podcast descriptions: tap the description to open them. On iOS 6 a link opens in Safari or
