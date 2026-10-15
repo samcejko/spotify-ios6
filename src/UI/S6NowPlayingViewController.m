@@ -32,6 +32,8 @@
     self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.showsVerticalScrollIndicator = NO;
+    // (exact row heights: iOS 11 and newer estimate them, and a line far down would land ~100 points off the middle)
+    if (S6ModernIOS() && [self.tableView respondsToSelector:@selector(setEstimatedRowHeight:)]) self.tableView.estimatedRowHeight = 0;
     self.currentLine = -1;
 }
 
