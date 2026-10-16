@@ -1,10 +1,10 @@
-#import "S6Settings.h"
+﻿#import "S6Settings.h"
 #import "S6Keychain.h"
 #import "S6Utils.h"
 #import "S6Common.h"
 
 #define DEF [NSUserDefaults standardUserDefaults]
-static NSString * const S6AccountKey = @"spot6.account";   // keychain: JSON {username, type, data (base64)}
+static NSString * const S6AccountKey = @"sixify.account";   // keychain: JSON {username, type, data (base64)}
 static const NSUInteger S6MaxRecentSearches = 12;
 
 @implementation S6Settings
@@ -17,6 +17,7 @@ static const NSUInteger S6MaxRecentSearches = 12;
         @"crossfade": @0,
         @"dataSaver": @YES,
         @"autoplay": @YES,
+        @"classicPlayer": @NO,
         @"darkTheme": @YES,
         @"verifyTLS": @YES,
         @"recentSearches": @[],
@@ -78,7 +79,7 @@ static const NSUInteger S6MaxRecentSearches = 12;
 {
     NSString *n = [DEF stringForKey:@"deviceName"];
     if (n.length) return n;
-    return S6IsPad() ? @"Spot6 (iPad)" : @"Spot6 (iPhone)";
+    return S6IsPad() ? @"Sixify (iPad)" : @"Sixify (iPhone)";
 }
 
 + (void)setDeviceName:(NSString *)name
@@ -110,6 +111,9 @@ static const NSUInteger S6MaxRecentSearches = 12;
 + (void)setAutoplay:(BOOL)value { [DEF setBool:value forKey:@"autoplay"]; [self notify]; }
 
 #pragma mark - Appearance, network
+
++ (BOOL)classicPlayer { return [DEF boolForKey:@"classicPlayer"]; }
++ (void)setClassicPlayer:(BOOL)value { [DEF setBool:value forKey:@"classicPlayer"]; [self notify]; }
 
 + (BOOL)darkTheme { return [DEF boolForKey:@"darkTheme"]; }
 + (void)setDarkTheme:(BOOL)value { [DEF setBool:value forKey:@"darkTheme"]; [self notify]; }

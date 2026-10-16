@@ -1,4 +1,4 @@
-#import "S6Catalog.h"
+﻿#import "S6Catalog.h"
 #import "S6Pathfinder.h"
 #import "S6SpClient.h"
 #import "S6Session.h"
@@ -94,7 +94,7 @@ static NSArray *S6Sections(id sectionList, NSString *untitled)
 {
     static dispatch_queue_t q;
     static dispatch_once_t once;
-    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.spot6.catalog", DISPATCH_QUEUE_CONCURRENT); });
+    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.sixify.catalog", DISPATCH_QUEUE_CONCURRENT); });
     return q;
 }
 

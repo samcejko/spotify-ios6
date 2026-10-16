@@ -1,4 +1,4 @@
-#import "S6SpClient.h"
+﻿#import "S6SpClient.h"
 #import "S6Session.h"
 #import "S6Tokens.h"
 #import "S6Proto.h"
@@ -12,7 +12,7 @@
 {
     static dispatch_queue_t q;
     static dispatch_once_t once;
-    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.spot6.spclient", DISPATCH_QUEUE_CONCURRENT); });
+    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.sixify.spclient", DISPATCH_QUEUE_CONCURRENT); });
     return q;
 }
 

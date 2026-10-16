@@ -1,4 +1,4 @@
-#import "S6ImageLoader.h"
+﻿#import "S6ImageLoader.h"
 #import "S6HTTP.h"
 #import "S6Utils.h"
 #import "S6Common.h"
@@ -179,7 +179,7 @@ static UIImage *S6DecodeImage(NSData *data, CGFloat maxPixels, BOOL animate, NSU
         _queue = [NSMutableArray array];
         _failed = [NSMutableDictionary dictionary];
         _animationAllowed = YES;
-        _workQueue = dispatch_queue_create("com.samcejko.spot6.images", DISPATCH_QUEUE_CONCURRENT);
+        _workQueue = dispatch_queue_create("com.samcejko.sixify.images", DISPATCH_QUEUE_CONCURRENT);
         _directory = [[S6Utils cachesPath] stringByAppendingPathComponent:@"images"];
         [[NSFileManager defaultManager] createDirectoryAtPath:_directory withIntermediateDirectories:YES attributes:nil error:NULL];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(clearMemory)

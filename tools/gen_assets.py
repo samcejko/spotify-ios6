@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Generates the app icon and launch images for iOS 6 (run in CI, needs Pillow and rsvg-convert).
 
 The icon is tools/icon.svg: a glossy green record with a white 6 on a charcoal tile, with
@@ -14,7 +14,7 @@ import tempfile
 from PIL import Image, ImageDraw, ImageFont
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "Resources"
-APP_NAME = "Spot6"
+APP_NAME = "Sixify"
 os.makedirs(OUT, exist_ok=True)
 
 FONT_CANDIDATES = [

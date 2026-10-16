@@ -1,4 +1,4 @@
-#import "S6Zeroconf.h"
+﻿#import "S6Zeroconf.h"
 #import "S6Session.h"
 #import "S6Tokens.h"
 #import "S6Crypto.h"
@@ -263,7 +263,7 @@ static NSDictionary *S6ParseForm(NSString *s)
         @"deviceType": S6IsPad() ? @"Tablet" : @"Smartphone",
         @"remoteName": [S6Settings deviceName],
         @"publicKey": [S6Utils base64Encode:self.keys.publicKey] ?: @"",
-        @"brandDisplayName": @"Spot6",
+        @"brandDisplayName": @"Sixify",
         @"modelDisplayName": S6IsPad() ? @"iPad" : @"iPhone",
         @"libraryVersion": @"0.8.0",
         @"resolverVersion": @"1",

@@ -1,4 +1,4 @@
-#import "S6SidebarViewController.h"
+﻿#import "S6SidebarViewController.h"
 #import "S6Session.h"
 #import "S6Settings.h"
 #import "S6Catalog.h"
@@ -106,7 +106,7 @@ enum { S6SideMain, S6SideLibrary, S6SidePlaylists, S6SideSectionCount };
     self.logo = [[UIImageView alloc] initWithImage:[theme brandMarkWithSize:30]];
     [self.view addSubview:self.logo];
     self.wordmark = [[UILabel alloc] initWithFrame:CGRectZero];
-    self.wordmark.text = @"Spot6";
+    self.wordmark.text = @"Sixify";
     self.wordmark.font = [UIFont fontWithName:@"HelveticaNeue-Bold" size:22] ?: [UIFont boldSystemFontOfSize:22];
     self.wordmark.textColor = [UIColor whiteColor];
     self.wordmark.backgroundColor = [UIColor clearColor];

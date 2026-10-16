@@ -1,4 +1,4 @@
-#import "S6Player.h"
+﻿#import "S6Player.h"
 #import "S6PlaybackEngine.h"
 #import "S6Models.h"
 #import "S6SpClient.h"
@@ -63,7 +63,7 @@ static const NSInteger S6MaxSkipsOnError = 5;
         _queue = [NSMutableArray array];
         _order = [NSMutableArray array];
         _orderPos = -1;
-        _loadQueue = dispatch_queue_create("com.samcejko.spot6.load", DISPATCH_QUEUE_CONCURRENT);
+        _loadQueue = dispatch_queue_create("com.samcejko.sixify.load", DISPATCH_QUEUE_CONCURRENT);
         _engine = [S6PlaybackEngine shared];
         _engine.delegate = self;
         [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(updateNowPlaying) userInfo:nil repeats:YES];
@@ -586,7 +586,7 @@ static void S6Shuffle(NSMutableArray *a)
 + (NSString *)statePath
 {
     NSString *base = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *dir = [base stringByAppendingPathComponent:@"Spot6"];
+    NSString *dir = [base stringByAppendingPathComponent:@"Sixify"];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
     return [dir stringByAppendingPathComponent:@"queue.json"];
 }

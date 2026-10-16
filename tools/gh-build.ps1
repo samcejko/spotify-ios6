@@ -1,4 +1,4 @@
-# Waits for the latest GitHub Actions run, prints errors on failure, downloads the packages on success
+﻿# Waits for the latest GitHub Actions run, prints errors on failure, downloads the packages on success
 # (both builds: armv7 for iOS 6 and arm64 for iOS 14-17) and optionally installs them over SSH:
 # the armv7 IPA/deb on the iPad, the arm64 deb on the iPhone (rootless jailbreak).
 # Usage: .\tools\gh-build.ps1 [-Repo owner/name] [-Token ghp_xxx] [-Trigger] [-Download] [-Install] [-IPadHost <address>]
@@ -21,7 +21,7 @@ param(
     [string]$HeadSha = ''
 )
 
-$AppName = 'Spot6'
+$AppName = 'Sixify'
 
 $ErrorActionPreference = 'Stop'
 if (-not $OutDir) { $OutDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'packages' }

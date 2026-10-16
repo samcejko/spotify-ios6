@@ -1,4 +1,4 @@
-#import "S6Pathfinder.h"
+﻿#import "S6Pathfinder.h"
 #import "S6Session.h"
 #import "S6Tokens.h"
 #import "S6Utils.h"
@@ -73,7 +73,7 @@ static NSString * const S6PathfinderURL = @"https://api-partner.spotify.com/path
 {
     static dispatch_queue_t q;
     static dispatch_once_t once;
-    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.spot6.pathfinder", DISPATCH_QUEUE_CONCURRENT); });
+    dispatch_once(&once, ^{ q = dispatch_queue_create("com.samcejko.sixify.pathfinder", DISPATCH_QUEUE_CONCURRENT); });
     return q;
 }
 

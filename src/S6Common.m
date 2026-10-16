@@ -1,10 +1,10 @@
-#import "S6Common.h"
+﻿#import "S6Common.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-NSString * const S6ErrorDomain                   = @"com.samcejko.Spot6";
+NSString * const S6ErrorDomain                   = @"com.samcejko.Sixify";
 NSString * const S6ThemeDidChangeNotification     = @"S6ThemeDidChangeNotification";
 NSString * const S6SettingsDidChangeNotification  = @"S6SettingsDidChangeNotification";
 NSString * const S6LibraryDidChangeNotification   = @"S6LibraryDidChangeNotification";

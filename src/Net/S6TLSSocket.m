@@ -1,4 +1,4 @@
-#import "S6TLSSocket.h"
+﻿#import "S6TLSSocket.h"
 #import "S6Common.h"
 
 // (the alert a server refused the handshake with is read from the context's private input buffer)
@@ -682,7 +682,7 @@ static int S6ConnectTCP(NSString *host, int port, int timeoutMs, volatile BOOL *
 
     [S6TLSSocket ensureCALoaded];
     int ret;
-    const char *pers = "Spot6-ios6";
+    const char *pers = "Sixify-ios6";
 
     if ((ret = mbedtls_ctr_drbg_seed(&_ctr, mbedtls_entropy_func, &_entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
         S6SetError(error, S6ErrorTLS, [NSString stringWithFormat:@"RNG seed failed: %@", S6MbedError(ret)]);

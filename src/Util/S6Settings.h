@@ -39,6 +39,8 @@ typedef NS_ENUM(NSInteger, S6Quality) {
 + (void)setAutoplay:(BOOL)value;
 
 // Appearance and network
++ (BOOL)classicPlayer;
++ (void)setClassicPlayer:(BOOL)value;
 + (BOOL)darkTheme;
 + (void)setDarkTheme:(BOOL)value;
 + (BOOL)verifyTLS;

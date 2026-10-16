@@ -75,10 +75,10 @@ static BOOL S6PressView(UIView *v, NSString *text)
 {
     signal(SIGPIPE, SIG_IGN);
     [S6Settings registerDefaults];
-    S6Log(@"Spot6 %@ starting on %@ (iOS %@)", [S6Utils appVersion], [S6Utils deviceModel], [UIDevice currentDevice].systemVersion);
+    S6Log(@"Sixify %@ starting on %@ (iOS %@)", [S6Utils appVersion], [S6Utils deviceModel], [UIDevice currentDevice].systemVersion);
     [S6TLSSocket warmUp];
     [[S6ImageLoader shared] pruneDisk];
-    // iOS 7 and newer (the arm64 build): full-screen modals, rounded grouped tables; the look stays Spot6's own
+    // iOS 7 and newer (the arm64 build): full-screen modals, rounded grouped tables; the look stays Sixify's own
     S6ModernSetUpWithoutSkin();
     [[S6Theme shared] applyGlobalAppearance];
 
@@ -121,7 +121,7 @@ static BOOL S6PressView(UIView *v, NSString *text)
 
 #pragma mark - Links
 
-// spot6:open?uri=<spotify: URI or open.spotify.com link>, spot6:search?q=, and plain open.spotify.com links.
+// sixify:open?uri=<spotify: URI or open.spotify.com link>, sixify:search?q=, and plain open.spotify.com links.
 // Debug commands (need Documents/debug): stats, aptest, screen, snapshot, press?title=/n=, back, lang?set=en|cs|system,
 // section?name=, play?uri=, player?cmd=pause|play|next|prev|seek&ms=|shuffle|repeat, nowplaying?panel=art|lyrics|queue,
 // rotate?o=landscape|portrait
@@ -131,8 +131,9 @@ static BOOL S6PressView(UIView *v, NSString *text)
     NSString *lower = [s lowercaseString];
     S6RootViewController *root = [S6RootViewController shared];
     if ([lower hasPrefix:@"http://"] || [lower hasPrefix:@"https://"] || [lower hasPrefix:@"spotify:"]) { [S6Router openURI:s]; return YES; }
-    if (![lower hasPrefix:@"spot6:"]) return NO;
-    NSString *target = [s substringFromIndex:@"spot6:".length];
+    if (![lower hasPrefix:@"sixify:"] && ![lower hasPrefix:@"spot6:"]) return NO;
+    NSString *scheme = [lower hasPrefix:@"sixify:"] ? @"sixify:" : @"spot6:";
+    NSString *target = [s substringFromIndex:scheme.length];
     while ([target hasPrefix:@"/"]) target = [target substringFromIndex:1];
     NSString *query = nil;
     NSRange q = [target rangeOfString:@"?"];

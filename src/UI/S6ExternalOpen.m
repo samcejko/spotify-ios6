@@ -1,4 +1,4 @@
-#import "S6ExternalOpen.h"
+﻿#import "S6ExternalOpen.h"
 #import "S6Common.h"
 
 // The iOS 7+ calls below run only after a runtime check; the SDK knows them
@@ -74,7 +74,7 @@ static BOOL S6HostMatches(NSString *host, NSArray *hosts)
     if (!url.host.length) return apps;
     UIApplication *app = [UIApplication sharedApplication];
     for (NSDictionary *sister in S6SisterApps()) {
-        if ([sister[@"name"] isEqualToString:@"Spot6"]) continue;
+        if ([sister[@"name"] isEqualToString:@"Sixify"]) continue;
         if (!S6HostMatches(url.host, sister[@"hosts"])) continue;
         if (![app canOpenURL:[NSURL URLWithString:[sister[@"scheme"] stringByAppendingString:@":open"]]]) continue;
         [apps addObject:sister];
@@ -135,7 +135,7 @@ static BOOL S6HostMatches(NSString *host, NSArray *hosts)
     if (!url || ![[url.scheme lowercaseString] hasPrefix:@"http"]) return;
     NSArray *sisters = [self sisterAppsForURL:url];
     BOOL modern = S6ModernOS();
-    NSLog(@"[Spot6] link %@: %@, %lu sister app(s)%@", copy ? @"share" : @"open", url.absoluteString, (unsigned long)sisters.count,
+    NSLog(@"[Sixify] link %@: %@, %lu sister app(s)%@", copy ? @"share" : @"open", url.absoluteString, (unsigned long)sisters.count,
           modern ? @"" : ([self surfariAvailable] ? @", Surfari" : @", no Surfari"));
     if (modern && copy) { [self presentActivitySheetForURL:url from:controller anchor:anchor]; return; }
     if (modern && sisters.count == 0) { [[UIApplication sharedApplication] openURL:url]; return; }

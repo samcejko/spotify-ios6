@@ -1,8 +1,8 @@
-# Third-party notices
+﻿# Third-party notices
 
-Spot6 is an independent, unofficial Spotify client. It is not affiliated with, endorsed by or associated with
-Spotify AB. Spotify is a trademark of Spotify AB. Spot6 needs a Spotify Premium account; using an unofficial client
-may be against Spotify's terms of use, which is the user's call. Spot6 never sees the account's password: the
+Sixify is an independent, unofficial Spotify client. It is not affiliated with, endorsed by or associated with
+Spotify AB. Spotify is a trademark of Spotify AB. Sixify needs a Spotify Premium account; using an unofficial client
+may be against Spotify's terms of use, which is the user's call. Sixify never sees the account's password: the
 Spotify app hands over a login meant for this device (Spotify Connect's "zeroconf" login).
 
 ## In the app
@@ -20,7 +20,7 @@ Spotify app hands over a login meant for this device (Spotify Connect's "zerocon
 - **librespot** - MIT License. How Spotify's access point protocol, the zeroconf login, the audio key exchange and
   the audio file format work was learned from librespot's source; no librespot code is included.
   https://github.com/librespot-org/librespot
-- **NTify** - the look of a Spotify client for iOS 6 that inspired Spot6's screens; no code of it is included.
+- **NTify** - the look of a Spotify client for iOS 6 that inspired Sixify's screens; no code of it is included.
   https://github.com/NTifyApp/NTify
 
 The license texts of the shipped libraries are included in the app bundle.

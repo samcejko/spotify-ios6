@@ -1,4 +1,4 @@
-#import <UIKit/UIKit.h>
+﻿#import <UIKit/UIKit.h>
 
 typedef NS_ENUM(NSInteger, S6Icon) {
     S6IconHome = 0,
@@ -33,7 +33,7 @@ typedef NS_ENUM(NSInteger, S6Icon) {
     S6IconMoon,              // the sleep timer
 };
 
-// The look of Spot6: Spotify's own iPad app of the iOS 6 years - charcoal, textured panels, glossy black bars, the
+// The look of Sixify: Spotify's own iPad app of the iOS 6 years - charcoal, textured panels, glossy black bars, the
 // green of 2012, artwork drawn in code (no image files). Dark only.
 @interface S6Theme : NSObject
 
@@ -68,7 +68,7 @@ typedef NS_ENUM(NSInteger, S6Icon) {
 - (UIImage *)sliderTrackImageFilled:(BOOL)filled;
 - (UIImage *)sliderThumbImage;
 - (UIImage *)explicitBadge;
-- (UIImage *)brandMarkWithSize:(CGFloat)size;           // Spot6's mark: a glossy green disc with a white 6
+- (UIImage *)brandMarkWithSize:(CGFloat)size;           // Sixify's mark: a glossy green disc with a white 6
 
 - (UIImage *)icon:(S6Icon)icon size:(CGFloat)size color:(UIColor *)color;
 - (UIImage *)icon:(S6Icon)icon size:(CGFloat)size;      // white

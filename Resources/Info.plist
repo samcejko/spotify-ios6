@@ -10,23 +10,23 @@
 		<string>cs</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Spot6</string>
+	<string>Sixify</string>
 	<key>CFBundleExecutable</key>
-	<string>Spot6</string>
+	<string>Sixify</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.samcejko.spot6</string>
+	<string>com.samcejko.sixify</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Spot6</string>
+	<string>Sixify</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.2.2</string>
+	<string>0.2.3</string>
 	<key>CFBundleVersion</key>
-	<string>5</string>
+	<string>6</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>iPhoneOS</string>
@@ -109,9 +109,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.samcejko.spot6</string>
+			<string>com.samcejko.sixify</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>sixify</string>
 				<string>spot6</string>
 			</array>
 		</dict>
@@ -119,7 +120,7 @@
 	<!-- iOS 14 and newer allow the Spotify Connect announcement on the local network (the phone's login) only
 	     with these (localized in InfoPlist.strings) -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Spot6 announces itself on your Wi-Fi so that the Spotify app on your phone can log it in and play to it.</string>
+	<string>Sixify announces itself on your Wi-Fi so that the Spotify app on your phone can log it in and play to it.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_spotify-connect._tcp</string>

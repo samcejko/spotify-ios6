@@ -1,5 +1,5 @@
-/*
- * mbedTLS configuration for Spot6 on iOS 6 (armv7).
+﻿/*
+ * mbedTLS configuration for Sixify on iOS 6 (armv7).
  *
  * The CI build renames the stock include/mbedtls/mbedtls_config.h to
  * mbedtls_config_default.h and installs this file in its place, so we start

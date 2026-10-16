@@ -1,7 +1,7 @@
-# Helpers for talking to the jailbroken iPhone (rootless jailbreak: Dopamine, palera1n) over SSH (dot-source this file).
+﻿# Helpers for talking to the jailbroken iPhone (rootless jailbreak: Dopamine, palera1n) over SSH (dot-source this file).
 #   . .\tools\iphone.ps1
 #   Invoke-IPhone 'uname -a'
-#   Install-IPhonePackage -DebPath .\packages\com.samcejko.spot6_0.0.0_iphoneos-arm64.deb   (needs root)
+#   Install-IPhonePackage -DebPath .\packages\com.samcejko.sixify_0.0.0_iphoneos-arm64.deb   (needs root)
 #   Get-IPhoneSnapshot -Name home          # launches the app, asks it for a picture of its windows, fetches the PNG
 #   Send-IPhoneCommand 'press?title=Chat'  # one of the app's debug URL commands (see the app delegate)
 #   Get-IPhoneCrashLogs
@@ -10,9 +10,9 @@
 # user on the phone: /var/jb/var/mobile/.ssh for mobile, /var/root/.ssh for root; the stock password is alpine).
 # dpkg needs root; everything else (launching, snapshots, crash logs) works as mobile too.
 
-$AppName = 'Spot6'
-$AppBundleId = 'com.samcejko.spot6'
-$AppUrlScheme = 'spot6'   # '' when the app has no URL scheme (no debug commands, no snapshots)
+$AppName = 'Sixify'
+$AppBundleId = 'com.samcejko.sixify'
+$AppUrlScheme = 'sixify'   # '' when the app has no URL scheme (no debug commands, no snapshots)
 
 $script:IPhoneKey = Join-Path $env:USERPROFILE '.ssh\iphone'
 $script:IPhoneDefaultHost = ''

@@ -1,4 +1,4 @@
-#import "S6Connect.h"
+﻿#import "S6Connect.h"
 #import "S6WebSocket.h"
 #import "S6Session.h"
 #import "S6Tokens.h"
@@ -155,8 +155,8 @@ static NSDictionary *S6Provided(S6Track *t, NSString *provider)
 - (instancetype)init
 {
     if ((self = [super init])) {
-        _putQueue = dispatch_queue_create("com.samcejko.spot6.connect.state", DISPATCH_QUEUE_SERIAL);
-        _workQueue = dispatch_queue_create("com.samcejko.spot6.connect.work", DISPATCH_QUEUE_CONCURRENT);
+        _putQueue = dispatch_queue_create("com.samcejko.sixify.connect.state", DISPATCH_QUEUE_SERIAL);
+        _workQueue = dispatch_queue_create("com.samcejko.sixify.connect.work", DISPATCH_QUEUE_CONCURRENT);
         _playbackId = S6RandomHex(16);
         _sessionId = S6RandomHex(16);
         NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
@@ -737,9 +737,9 @@ static NSDictionary *S6Provided(S6Track *t, NSString *provider)
         @"restrict_to_local": @NO, @"is_voice_enabled": @NO, @"supports_rename": @NO, @"supports_external_episodes": @NO,
         @"supports_set_backend_metadata": @NO,
     };
-    return @{ @"can_play": @YES, @"volume": @((NSInteger)lroundf([S6AudioOutput shared].volume * 65535.f)), @"name": [S6Settings deviceName] ?: @"Spot6",
+    return @{ @"can_play": @YES, @"volume": @((NSInteger)lroundf([S6AudioOutput shared].volume * 65535.f)), @"name": [S6Settings deviceName] ?: @"Sixify",
               @"capabilities": capabilities, @"device_software_version": @"1.2.52.442", @"device_type": S6IsPad() ? @"TABLET" : @"SMARTPHONE",
-              @"spirc_version": @"3.2.6", @"device_id": [S6Settings deviceId] ?: @"", @"client_id": S6ClientId, @"brand": @"Spot6",
+              @"spirc_version": @"3.2.6", @"device_id": [S6Settings deviceId] ?: @"", @"client_id": S6ClientId, @"brand": @"Sixify",
               @"model": S6IsPad() ? @"iPad" : @"iPhone" };
 }
 
@@ -762,7 +762,7 @@ static NSDictionary *S6Provided(S6Track *t, NSString *provider)
     s[@"context_uri"] = context;
     s[@"context_url"] = [@"context://" stringByAppendingString:context];
     s[@"context_restrictions"] = @{};
-    s[@"play_origin"] = _playOrigin ?: @{ @"feature_identifier": @"spot6", @"feature_version": [S6Utils appVersion] ?: @"" };
+    s[@"play_origin"] = _playOrigin ?: @{ @"feature_identifier": @"sixify", @"feature_version": [S6Utils appVersion] ?: @"" };
     s[@"index"] = @{ @"page": @0, @"track": @(MAX(0, p.contextIndex)) };
     s[@"track"] = S6Provided(t, p.contextIndex < 0 ? @"queue" : @"context");
     s[@"playback_id"] = _playbackId ?: S6RandomHex(16);

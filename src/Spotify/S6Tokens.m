@@ -1,4 +1,4 @@
-#import "S6Tokens.h"
+﻿#import "S6Tokens.h"
 #import "S6Session.h"
 #import "S6Proto.h"
 #import "S6Crypto.h"
@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 NSString * const S6ClientId = @"65b708073fc0480ea92a077233ca87bd";
-NSString * const S6UserAgent = @"Spotify/124200290 Linux/0 (librespot-spot6)";
+NSString * const S6UserAgent = @"Spotify/124200290 Linux/0 (librespot-sixify)";
 static NSString * const S6ClientVersion = @"1.2.52.442";
 static NSString * const S6WebScopes = @"user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative,"
     "playlist-modify-public,playlist-modify-private,user-library-read,user-library-modify,user-follow-read,user-follow-modify,"
@@ -287,7 +287,7 @@ static NSTimeInterval S6SolveHashcash(NSData *context, NSData *prefix, int lengt
             NSData *hashcash = S6ProtoBytes(challenge, 1);
             if (!hashcash) {
                 if (S6ProtoHas(challenge, 2)) {
-                    if (error) *error = S6MakeError(S6ErrorAuth, L(@"Spotify wants an extra confirmation that Spot6 cannot give."));
+                    if (error) *error = S6MakeError(S6ErrorAuth, L(@"Spotify wants an extra confirmation that Sixify cannot give."));
                     return nil;
                 }
                 continue;

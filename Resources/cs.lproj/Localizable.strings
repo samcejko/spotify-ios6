@@ -1,4 +1,4 @@
-/* Spot6 - čeština */
+﻿/* Sixify - čeština */
 
 "%@ followers" = "%@ sledujících";
 "%@ likes" = "%@ uloÅ¾enÃ­";
@@ -141,11 +141,11 @@
 "Song radio" = "Rádio skladby";
 "Songs" = "Skladby";
 "Songs you like show up here. Tap the heart." = "Tady budou skladby, které se ti líbí. Klepni na srdíčko.";
-"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify." = "Spot6 je neoficiální aplikace. Spotify ji nevytvořilo, neschválilo ani nepodporuje.";
-"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify. Spotify is a trademark of Spotify AB." = "Spot6 je neoficiální aplikace. Spotify ji nevytvořilo, neschválilo ani nepodporuje. Spotify je ochranná známka společnosti Spotify AB.";
-"Spot6 is built with these, thank you:" = "Spot6 stojí na těchto projektech, díky:";
-"Spot6 logs in by itself. Then you control everything right here." = "Spot6 se přihlásí sám. Pak už všechno ovládáš přímo tady.";
-"Spot6 needs Spotify Premium. Your password never goes through this app: the Spotify app hands over a login meant only for this device. Spot6 is not made by Spotify." = "Spot6 potřebuje Spotify Premium. Tvoje heslo touto aplikací nikdy neprochází: aplikace Spotify předá přihlášení určené jen pro toto zařízení. Spot6 nevytvořilo Spotify.";
+"Sixify is an unofficial app. It is not made, endorsed or supported by Spotify." = "Sixify je neoficiální aplikace. Spotify ji nevytvořilo, neschválilo ani nepodporuje.";
+"Sixify is an unofficial app. It is not made, endorsed or supported by Spotify. Spotify is a trademark of Spotify AB." = "Sixify je neoficiální aplikace. Spotify ji nevytvořilo, neschválilo ani nepodporuje. Spotify je ochranná známka společnosti Spotify AB.";
+"Sixify is built with these, thank you:" = "Sixify stojí na těchto projektech, díky:";
+"Sixify logs in by itself. Then you control everything right here." = "Sixify se přihlásí sám. Pak už všechno ovládáš přímo tady.";
+"Sixify needs Spotify Premium. Your password never goes through this app: the Spotify app hands over a login meant only for this device. Sixify is not made by Spotify." = "Sixify potřebuje Spotify Premium. Tvoje heslo touto aplikací nikdy neprochází: aplikace Spotify předá přihlášení určené jen pro toto zařízení. Sixify nevytvořilo Spotify.";
 "Spotify answered the login unexpectedly (0x%02x)." = "Spotify na přihlášení odpovědělo nečekaně (0x%02x).";
 "Spotify answered with error %ld." = "Spotify odpovědělo chybou %ld.";
 "Spotify asked to try another server." = "Spotify požádalo o jiný server.";
@@ -167,7 +167,7 @@
 "Spotify refused the login: %@ Pick this device in the Spotify app again." = "Spotify odmítlo přihlášení: %@ Vyber toto zařízení v aplikaci Spotify znovu.";
 "Spotify refused the song's key (error %04x)." = "Spotify odmítlo klíč skladby (chyba %04x).";
 "Spotify sent something unexpected." = "Spotify poslalo něco nečekaného.";
-"Spotify wants an extra confirmation that Spot6 cannot give." = "Spotify chce dodatečné ověření, které Spot6 neumí.";
+"Spotify wants an extra confirmation that Sixify cannot give." = "Spotify chce dodatečné ověření, které Sixify neumí.";
 "Starting radio…" = "Spouštím rádio…";
 "Storage" = "Úložiště";
 "Streaming quality" = "Kvalita streamování";
@@ -176,7 +176,7 @@
 "The connection to Spotify could not be secured." = "Spojení se Spotify nešlo zabezpečit.";
 "The connection to Spotify was closed." = "Spojení se Spotify bylo ukončeno.";
 "The download broke off." = "Stahování se přerušilo.";
-"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Spot6 is open, your devices can see it." = "Název tohoto zařízení v aplikacích Spotify tvého účtu: vyber ho v telefonu, když se chceš přihlásit, pustit hudbu sem nebo ovládat, co tu hraje (Spotify Connect). Dokud je Spot6 otevřený, tvoje zařízení ho vidí.";
+"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Sixify is open, your devices can see it." = "Název tohoto zařízení v aplikacích Spotify tvého účtu: vyber ho v telefonu, když se chceš přihlásit, pustit hudbu sem nebo ovládat, co tu hraje (Spotify Connect). Dokud je Sixify otevřený, tvoje zařízení ho vidí.";
 "The playlist could not be created." = "Playlist nešlo vytvořit.";
 "The server closed the connection without responding." = "Server ukončil spojení bez odpovědi.";
 "The server could not prove that it is Spotify." = "Server nedokázal, že je to Spotify.";
@@ -221,9 +221,10 @@
 /* Sleep timer, crossfade, data saver, queue editing */
 "%ld minutes" = "%ld minut";
 "%ld s" = "%ld s";
+"Classic player" = "Klasický přehrávač";
 "Crossfade" = "Prolínání";
 "Data saver" = "Úspora dat";
-"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing." = "Úspora dat: na mobilních datech hrají skladby v normální kvalitě (96 kbit/s). Prolínání plynule převede konec skladby do další. Automatické přehrávání: když hudba dojde, hrají dál podobné skladby.";
+"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing. Classic player: iOS 6 graphite design for Now Playing." = "Úspora dat: na mobilních datech hrají skladby v normální kvalitě (96 kbit/s). Prolínání plynule převede konec skladby do další. Automatické přehrávání: když hudba dojde, hrají dál podobné skladby. Klasický přehrávač: grafitový design iOS 6 pro obrazovku Přehrává se.";
 "Done" = "Hotovo";
 "Edit" = "Upravit";
 "End of this song" = "Na konci této skladby";

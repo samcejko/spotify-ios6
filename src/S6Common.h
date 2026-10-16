@@ -1,4 +1,4 @@
-// Shared macros and constants. Everything here must be iOS 6.0 safe.
+﻿// Shared macros and constants. Everything here must be iOS 6.0 safe.
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
@@ -7,7 +7,7 @@
 
 #define L(key) NSLocalizedString((key), nil)
 #define S6IsPad() (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
-#define S6Log(fmt, ...) NSLog((@"[Spot6] " fmt), ##__VA_ARGS__)
+#define S6Log(fmt, ...) NSLog((@"[Sixify] " fmt), ##__VA_ARGS__)
 
 // Runs a block on the main thread (immediately if already there).
 static inline void S6Main(dispatch_block_t block)

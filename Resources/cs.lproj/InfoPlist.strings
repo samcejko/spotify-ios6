@@ -1,3 +1,3 @@
-/* Spot6 – systémové dotazy na oprávnění (iOS 14 a novější). */
+/* Sixify – systémové dotazy na oprávnění (iOS 14 a novější). */
 
-"NSLocalNetworkUsageDescription" = "Spot6 se ohlásí na vaší Wi-Fi, aby ho aplikace Spotify v telefonu mohla přihlásit a hrát na něm.";
+"NSLocalNetworkUsageDescription" = "Sixify se ohlásí na vaší Wi-Fi, aby ho aplikace Spotify v telefonu mohla přihlásit a hrát na něm.";

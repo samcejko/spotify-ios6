@@ -5,10 +5,10 @@
 	<!-- Entitlements for the ldid pseudo-signature. The keychain group lets the app keep its data in the
 	     keychain instead of the preferences (securityd refuses SecItem calls without one: -25308). -->
 	<key>application-identifier</key>
-	<string>com.samcejko.spot6</string>
+	<string>com.samcejko.sixify</string>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>com.samcejko.spot6</string>
+		<string>com.samcejko.sixify</string>
 	</array>
 	<key>get-task-allow</key>
 	<true/>

@@ -1,4 +1,4 @@
-#import "S6SettingsViewController.h"
+﻿#import "S6SettingsViewController.h"
 #import "S6ExternalOpen.h"
 #import "S6Router.h"
 #import "S6Session.h"
@@ -142,10 +142,10 @@ static UIImageView *S6CheckView(void)
                  "Mbed TLS (Arm Limited and contributors)\nApache License 2.0\n\n"
                  "librespot (the librespot contributors)\n%@\n\n"
                  "%@",
-                 L(@"Spot6 is built with these, thank you:"),
+                 L(@"Sixify is built with these, thank you:"),
                  L(@"Public domain: the Ogg Vorbis decoder."),
                  L(@"MIT License: how Spotify's protocol works was learned from it (no code of it is in the app)."),
-                 L(@"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify. Spotify is a trademark of Spotify AB.")];
+                 L(@"Sixify is an unofficial app. It is not made, endorsed or supported by Spotify. Spotify is a trademark of Spotify AB.")];
     [self.view addSubview:text];
 }
 
@@ -211,7 +211,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 {
     switch (section) {
         case S6SetAccount: return 3;
-        case S6SetPlayback: return 5;
+        case S6SetPlayback: return 6;
         case S6SetDevice: return 3;
         case S6SetStorage: return 1;
         case S6SetAbout: return 3;
@@ -235,9 +235,9 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 - (NSString *)footerFor:(NSInteger)section
 {
     switch (section) {
-        case S6SetPlayback: return L(@"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing.");
-        case S6SetDevice: return L(@"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Spot6 is open, your devices can see it.");
-        case S6SetAbout: return L(@"Spot6 is an unofficial app. It is not made, endorsed or supported by Spotify.");
+        case S6SetPlayback: return L(@"Data saver: on mobile data songs play in Normal quality (96 kbit/s). Crossfade blends the end of a song into the next one. Autoplay: when your music runs out, similar songs keep playing. Classic player: iOS 6 graphite design for Now Playing.");
+        case S6SetDevice: return L(@"The name of this device in the Spotify apps of your account: pick it on your phone to log in, to play here, and to control what plays here (Spotify Connect). While Sixify is open, your devices can see it.");
+        case S6SetAbout: return L(@"Sixify is an unofficial app. It is not made, endorsed or supported by Spotify.");
     }
     return nil;
 }
@@ -323,6 +323,7 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
                 cell.selectionStyle = UITableViewCellSelectionStyleGray;
             }
             if (row == 4) { cell.textLabel.text = L(@"Autoplay"); cell.accessoryView = [self switchOn:[S6Settings autoplay] action:@selector(autoplayChanged:)]; }
+            if (row == 5) { cell.textLabel.text = L(@"Classic player"); cell.accessoryView = [self switchOn:[S6Settings classicPlayer] action:@selector(classicPlayerChanged:)]; }
             break;
         case S6SetDevice:
             if (row == 0) {
@@ -443,5 +444,6 @@ enum { S6SetAccount, S6SetPlayback, S6SetDevice, S6SetStorage, S6SetAbout, S6Set
 - (void)normalizeChanged:(UISwitch *)s { [S6Settings setNormalize:s.on]; }
 - (void)dataSaverChanged:(UISwitch *)s { [S6Settings setDataSaver:s.on]; }
 - (void)autoplayChanged:(UISwitch *)s { [S6Settings setAutoplay:s.on]; }
+- (void)classicPlayerChanged:(UISwitch *)s { [S6Settings setClassicPlayer:s.on]; }
 
 @end

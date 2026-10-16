@@ -1,4 +1,4 @@
-#import "S6Session.h"
+﻿#import "S6Session.h"
 #import "S6AccessPoint.h"
 #import "S6Proto.h"
 #import "S6Crypto.h"
@@ -69,7 +69,7 @@ static const NSTimeInterval S6MaxRetryDelay = 60;
 - (instancetype)init
 {
     if ((self = [super init])) {
-        _queue = dispatch_queue_create("com.samcejko.spot6.session", DISPATCH_QUEUE_SERIAL);
+        _queue = dispatch_queue_create("com.samcejko.sixify.session", DISPATCH_QUEUE_SERIAL);
         _pendingKeys = [NSMutableDictionary dictionary];
         _pendingMercury = [NSMutableDictionary dictionary];
         _stateCondition = [[NSCondition alloc] init];
@@ -270,7 +270,7 @@ static const NSTimeInterval S6MaxRetryDelay = 60;
     S6ProtoWriter *system = [S6ProtoWriter writer];
     [system varint:5 field:10];                                // cpu_family: CPU_ARM
     [system varint:5 field:60];                                // os: OS_LINUX
-    [system string:@"librespot-spot6-1" field:90];             // system_information_string
+    [system string:@"librespot-sixify-1" field:90];             // system_information_string
     [system string:[S6Settings deviceId] field:100];           // device_id
     S6ProtoWriter *login = [S6ProtoWriter writer];
     [login message:credentials field:10];
@@ -584,13 +584,13 @@ static NSData *S6U16(NSUInteger v)
         if (![ap connectToHost:host port:port error:&e]) { S6Log(@"aptest: handshake with %@ failed: %@", hostPort, e.localizedDescription); return; }
         S6Log(@"aptest: handshake with %@ done in %.2f s", hostPort, -[start timeIntervalSinceNow]);
         S6ProtoWriter *credentials = [S6ProtoWriter writer];
-        [credentials string:@"spot6-handshake-test" field:10];
+        [credentials string:@"sixify-handshake-test" field:10];
         [credentials varint:0 field:20];                                   // AUTHENTICATION_USER_PASS
         [credentials bytes:[@"not-a-password" dataUsingEncoding:NSUTF8StringEncoding] field:30];
         S6ProtoWriter *system = [S6ProtoWriter writer];
         [system varint:5 field:10];
         [system varint:5 field:60];
-        [system string:@"librespot-spot6-1" field:90];
+        [system string:@"librespot-sixify-1" field:90];
         [system string:[S6Settings deviceId] field:100];
         S6ProtoWriter *login = [S6ProtoWriter writer];
         [login message:credentials field:10];

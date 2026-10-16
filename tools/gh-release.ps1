@@ -1,4 +1,4 @@
-# Publishes a GitHub release through the REST API: tag v<Version> at <Sha>, the CHANGELOG section as the notes,
+﻿# Publishes a GitHub release through the REST API: tag v<Version> at <Sha>, the CHANGELOG section as the notes,
 # the IPA and DEB of a downloaded CI run (packages\run-<id>) as assets, with their SHA-256 sums in the notes.
 # Usage: .\tools\gh-release.ps1 -RunDir .\packages\run-123 -Sha <commit> [-Version 0.1.0] [-Repo owner/name] [-Token ghp_xxx] [-DryRun]
 # Repo and token default to tools/local.json. -DryRun prints what would be published and uploads nothing.
@@ -36,7 +36,7 @@ $section = ''
 if ($changelog -match "(?s)## $([regex]::Escape($Version))[^\n]*\n(.*?)(\n## |\z)") { $section = $Matches[1].Trim() }
 # (ASCII only in this file: Windows PowerShell 5.1 reads a BOM-less script in the ANSI code page)
 $sums = $assets | ForEach-Object { "- ``$($_.Name)`` - SHA-256 ``$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())``" }
-$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Spot6-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. **Logging in** needs Spotify Premium: open Spot6, then pick "Spot6 (iPad)" in the Spotify app on your phone (same Wi-Fi). Spot6 is an unofficial app, not made by Spotify. **iOS 14-17 (arm64, iPhone X and newer):** the `iphoneos-arm64` DEB for rootless jailbreaks (open it in Sileo or Zebra, or `dpkg -i`), the `-arm64.ipa` for TrollStore.' -f $Version
+$install = '**Installation (jailbroken iOS 6):** the IPA through `ipainstaller -f Sixify-{0}.ipa` (AppSync Unified), or the DEB through `dpkg -i` followed by `su mobile -c uicache`. Either works; do not keep both installed at once. **Logging in** needs Spotify Premium: open Sixify, then pick "Sixify (iPad)" in the Spotify app on your phone (same Wi-Fi). Sixify is an unofficial app, not made by Spotify. **iOS 14-17 (arm64, iPhone X and newer):** the `iphoneos-arm64` DEB for rootless jailbreaks (open it in Sileo or Zebra, or `dpkg -i`), the `-arm64.ipa` for TrollStore.' -f $Version
 $notes = ($section, '', $install, '', '**Checksums**', ($sums -join "`n")) -join "`n"
 
 Write-Host "Release $tag of $Repo at $($Sha.Substring(0, [Math]::Min(7, $Sha.Length)))"
@@ -44,18 +44,18 @@ Write-Host "Assets: $(($assets | ForEach-Object { $_.Name }) -join ', ')"
 Write-Host "--- notes ---`n$notes`n-------------"
 if ($DryRun) { Write-Host 'Dry run: nothing published.'; exit 0 }
 
-$headers = @{ Authorization = "Bearer $Token"; Accept = 'application/vnd.github+json'; 'User-Agent' = 'Spot6-tools'; 'X-GitHub-Api-Version' = '2022-11-28' }
+$headers = @{ Authorization = "Bearer $Token"; Accept = 'application/vnd.github+json'; 'User-Agent' = 'Sixify-tools'; 'X-GitHub-Api-Version' = '2022-11-28' }
 $api = "https://api.github.com/repos/$Repo"
 
 # an existing release of this tag is reused (assets of the same name are replaced)
 $release = $null
 try { $release = Invoke-RestMethod -Uri "$api/releases/tags/$tag" -Headers $headers -TimeoutSec 60 } catch { $release = $null }
 if (-not $release) {
-    $body = @{ tag_name = $tag; target_commitish = $Sha; name = "Spot6 $Version"; body = $notes; draft = $false; prerelease = $false } | ConvertTo-Json
+    $body = @{ tag_name = $tag; target_commitish = $Sha; name = "Sixify $Version"; body = $notes; draft = $false; prerelease = $false } | ConvertTo-Json
     $release = Invoke-RestMethod -Method Post -Uri "$api/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -TimeoutSec 60
     Write-Host "Created release $($release.id)"
 } else {
-    $body = @{ body = $notes; name = "Spot6 $Version" } | ConvertTo-Json
+    $body = @{ body = $notes; name = "Sixify $Version" } | ConvertTo-Json
     $release = Invoke-RestMethod -Method Patch -Uri "$api/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -TimeoutSec 60
     Write-Host "Updated release $($release.id)"
 }

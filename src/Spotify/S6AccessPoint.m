@@ -1,4 +1,4 @@
-#import "S6AccessPoint.h"
+﻿#import "S6AccessPoint.h"
 #import "S6TLSSocket.h"
 #import "S6Proto.h"
 #import "S6Crypto.h"
@@ -36,7 +36,7 @@ static NSString *S6APErrorText(uint64_t code)
         case 0x0b: return L(@"Spotify Premium is required.");
         case 0x0c:
         case 0x0d: return L(@"Spotify did not accept the login.");
-        case 0x0f: return L(@"Spotify wants an extra confirmation that Spot6 cannot give.");
+        case 0x0f: return L(@"Spotify wants an extra confirmation that Sixify cannot give.");
         default: return [NSString stringWithFormat:L(@"Spotify refused the connection (error %llu)."), code];   // 5 bad connection id, 0x10 app key, 0x11 banned
     }
 }

@@ -1,8 +1,8 @@
-#import "S6Keychain.h"
+﻿#import "S6Keychain.h"
 #import "S6Common.h"
 #import <Security/Security.h>
 
-static NSString * const S6KeychainService = @"com.samcejko.spot6";
+static NSString * const S6KeychainService = @"com.samcejko.sixify";
 
 @implementation S6Keychain
 

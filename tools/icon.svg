@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Spot6: a glossy green record with a white 6 on a charcoal tile, in the iOS 6 manner (the gloss is baked in,
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Sixify: a glossy green record with a white 6 on a charcoal tile, in the iOS 6 manner (the gloss is baked in,
        UIPrerenderedIcon is on) -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">

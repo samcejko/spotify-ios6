@@ -10,6 +10,7 @@
 #import "S6Utils.h"
 #import "S6Modern.h"
 #import "S6Common.h"
+#import "S6Settings.h"
 #import <MediaPlayer/MediaPlayer.h>
 
 #pragma mark - Lyrics
@@ -303,6 +304,9 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 @interface S6NowPlayingViewController ()
 @property (nonatomic, strong) UIImageView *backdrop;
 @property (nonatomic, strong) UIView *dim;
+@property (nonatomic, strong) UIImageView *topBar;
+@property (nonatomic, strong) UIImageView *bottomDock;
+@property (nonatomic, strong) UIView *artContainer;
 @property (nonatomic, strong) S6ImageView *art;
 @property (nonatomic, strong) UIButton *closeButton;
 @property (nonatomic, strong) UIButton *moreButton;
@@ -374,11 +378,24 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     self.dim.backgroundColor = [UIColor colorWithWhite:0 alpha:0.45];
     [self.view addSubview:self.dim];
 
+    self.topBar = [[UIImageView alloc] initWithImage:[theme navigationBarImage]];
+    self.topBar.userInteractionEnabled = NO;
+    [self.view addSubview:self.topBar];
+
+    self.bottomDock = [[UIImageView alloc] initWithImage:[theme playerBarImage]];
+    self.bottomDock.userInteractionEnabled = NO;
+    [self.view addSubview:self.bottomDock];
+
+    self.artContainer = [[UIView alloc] initWithFrame:CGRectZero];
+    self.artContainer.backgroundColor = [UIColor blackColor];
+    [self.view addSubview:self.artContainer];
+
     self.art = [[S6ImageView alloc] initWithFrame:CGRectZero];
     self.art.contentMode = UIViewContentModeScaleAspectFill;
     self.art.clipsToBounds = YES;
     self.art.maxPixels = 1024;
-    [self.view addSubview:self.art];
+    self.art.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.artContainer addSubview:self.art];
 
     self.lyrics = [[S6LyricsViewController alloc] initWithStyle:UITableViewStylePlain];
     [self addChildViewController:self.lyrics];
@@ -432,7 +449,81 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(update) name:S6PlayerDidChangeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(libraryChanged) name:S6LibraryDidChangeNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applyThemeMode) name:S6SettingsDidChangeNotification object:nil];
+    [self applyThemeMode];
     [self update];
+}
+
+- (void)applyThemeMode
+{
+    BOOL classic = [S6Settings classicPlayer];
+    S6Theme *theme = [S6Theme shared];
+    if (classic) {
+        self.view.backgroundColor = [theme backgroundColor];
+        self.backdrop.hidden = YES;
+        self.dim.hidden = YES;
+        self.topBar.hidden = NO;
+        self.bottomDock.hidden = NO;
+
+        self.artContainer.layer.shadowColor = [UIColor blackColor].CGColor;
+        self.artContainer.layer.shadowOffset = CGSizeMake(0, 4);
+        self.artContainer.layer.shadowOpacity = 0.75f;
+        self.artContainer.layer.shadowRadius = 8.0f;
+        self.artContainer.layer.borderWidth = 1.0f;
+        self.artContainer.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.18].CGColor;
+
+        [self.closeButton setImage:nil forState:UIControlStateNormal];
+        [self.closeButton setBackgroundImage:[theme darkButtonImageHighlighted:NO] forState:UIControlStateNormal];
+        [self.closeButton setBackgroundImage:[theme darkButtonImageHighlighted:YES] forState:UIControlStateHighlighted];
+        [self.closeButton setTitle:L(@"Done") forState:UIControlStateNormal];
+        [self.closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        self.closeButton.titleLabel.font = [theme boldBodyFont];
+        self.closeButton.titleLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.75];
+        self.closeButton.titleLabel.shadowOffset = CGSizeMake(0, -1);
+
+        [self.moreButton setBackgroundImage:[theme darkButtonImageHighlighted:NO] forState:UIControlStateNormal];
+        [self.moreButton setBackgroundImage:[theme darkButtonImageHighlighted:YES] forState:UIControlStateHighlighted];
+        [self.sleepButton setBackgroundImage:[theme darkButtonImageHighlighted:NO] forState:UIControlStateNormal];
+        [self.sleepButton setBackgroundImage:[theme darkButtonImageHighlighted:YES] forState:UIControlStateHighlighted];
+
+        self.contextLabel.font = [theme boldBodyFont];
+        self.contextLabel.textColor = [UIColor whiteColor];
+        self.contextLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.75];
+        self.contextLabel.shadowOffset = CGSizeMake(0, -1);
+        self.contextLabel.numberOfLines = 1;
+
+        self.titleLabel.shadowOffset = CGSizeMake(0, -1);
+    } else {
+        self.view.backgroundColor = [theme plainBackgroundColor];
+        self.backdrop.hidden = NO;
+        self.dim.hidden = NO;
+        self.topBar.hidden = YES;
+        self.bottomDock.hidden = YES;
+
+        self.artContainer.layer.shadowOpacity = 0;
+        self.artContainer.layer.borderWidth = 0;
+
+        [self.closeButton setTitle:nil forState:UIControlStateNormal];
+        [self.closeButton setBackgroundImage:nil forState:UIControlStateNormal];
+        [self.closeButton setBackgroundImage:nil forState:UIControlStateHighlighted];
+        [self.closeButton setImage:[theme icon:S6IconChevronDown size:24] forState:UIControlStateNormal];
+
+        [self.moreButton setBackgroundImage:nil forState:UIControlStateNormal];
+        [self.moreButton setBackgroundImage:nil forState:UIControlStateHighlighted];
+        [self.sleepButton setBackgroundImage:nil forState:UIControlStateNormal];
+        [self.sleepButton setBackgroundImage:nil forState:UIControlStateHighlighted];
+
+        self.contextLabel.font = [theme sectionFont];
+        self.contextLabel.textColor = [theme secondaryTextColor];
+        self.contextLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.7];
+        self.contextLabel.shadowOffset = CGSizeMake(0, 1);
+        self.contextLabel.numberOfLines = 2;
+
+        self.titleLabel.shadowOffset = CGSizeMake(0, 1);
+    }
+    if (self.isViewLoaded) {
+        [self.view setNeedsLayout];
+    }
 }
 
 - (void)libraryChanged
@@ -444,6 +535,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
+    [self applyThemeMode];
     [self.timer invalidate];
     self.timer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(tick) userInfo:nil repeats:YES];
     [self showPanel];
@@ -470,6 +562,18 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     // iOS 6 puts the view under the status bar; from iOS 7 on it lies behind it (hidden here), and iOS 11+ has the notch
     CGFloat top = S6ModernTopInset(self.view, 0);
     if (top < 20 && S6ModernIOS()) top = 20;
+
+    if ([S6Settings classicPlayer]) {
+        [self layoutClassicInSize:s top:top landscape:landscape];
+    } else {
+        [self layoutModernInSize:s top:top landscape:landscape];
+    }
+}
+
+- (void)layoutModernInSize:(CGSize)s top:(CGFloat)top landscape:(BOOL)landscape
+{
+    self.topBar.hidden = YES;
+    self.bottomDock.hidden = YES;
     self.closeButton.frame = CGRectMake(8, top + 4, 44, 44);
     self.moreButton.frame = CGRectMake(s.width - 52, top + 4, 44, 44);
     self.sleepButton.frame = CGRectMake(s.width - 96, top + 4, 44, 44);
@@ -479,7 +583,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
         // the cover (or lyrics/queue) on the left, everything else on the right
         CGFloat side = MIN(s.height - 120, s.width / 2 - 40);
         CGRect panel = CGRectMake(40, (s.height - side) / 2 + 10, side, side);
-        self.art.frame = panel;
+        self.artContainer.frame = panel;
         self.lyrics.view.frame = panel;
         self.queue.view.frame = panel;
         CGFloat x = 40 + side + 40, w = s.width - x - 40;
@@ -487,11 +591,124 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     } else {
         CGFloat side = MIN(s.width - (S6IsPad() ? 140 : 40), s.height - controlsH - 110);
         CGRect panel = CGRectMake((s.width - side) / 2, top + 60, side, side);
-        self.art.frame = panel;
+        self.artContainer.frame = panel;
         self.lyrics.view.frame = CGRectMake(20, top + 50, s.width - 40, side + 20);
         self.queue.view.frame = CGRectMake(0, top + 50, s.width, side + 20);
         CGFloat w = MIN(s.width - 40, 560);
         [self layoutControlsInRect:CGRectMake((s.width - w) / 2, CGRectGetMaxY(panel) + 18, w, controlsH)];
+    }
+}
+
+- (void)layoutClassicInSize:(CGSize)s top:(CGFloat)top landscape:(BOOL)landscape
+{
+    self.topBar.hidden = NO;
+    self.bottomDock.hidden = NO;
+    CGFloat bottom = S6SafeAreaInsets(self.view).bottom;
+    CGFloat barH = 44.0f;
+    self.topBar.frame = CGRectMake(0, 0, s.width, top + barH);
+
+    CGFloat doneW = MAX(56.0f, [self.closeButton.titleLabel.text sizeWithFont:[[S6Theme shared] boldBodyFont]].width + 20.0f);
+    self.closeButton.frame = CGRectMake(8, top + 7, doneW, 30);
+    self.moreButton.frame = CGRectMake(s.width - 40, top + 7, 32, 30);
+    self.sleepButton.frame = CGRectMake(s.width - 78, top + 7, 32, 30);
+    CGFloat titleLeft = CGRectGetMaxX(self.closeButton.frame) + 8;
+    CGFloat titleRight = self.sleepButton.frame.origin.x - 8;
+    self.contextLabel.frame = CGRectMake(titleLeft, top + 7, MAX(0, titleRight - titleLeft), 30);
+
+    if (landscape && S6IsPad()) {
+        CGFloat availY = top + barH;
+        CGFloat availH = s.height - availY - bottom;
+        CGFloat side = MIN(availH - 40, s.width / 2 - 60);
+        CGRect panel = CGRectMake(50, availY + (availH - side) / 2, side, side);
+        self.artContainer.frame = panel;
+        self.lyrics.view.frame = panel;
+        self.queue.view.frame = panel;
+
+        CGFloat rx = 50 + side + 40;
+        CGFloat rw = s.width - rx - 50;
+        CGFloat rightCenterY = availY + availH / 2;
+        CGFloat infoY = rightCenterY - 130;
+        self.titleLabel.frame = CGRectMake(rx + 36, infoY, rw - 72, 28);
+        self.heartButton.frame = CGRectMake(rx + rw - 36, infoY - 6, 36, 36);
+        self.artistButton.frame = CGRectMake(rx + 36, infoY + 28, rw - 72, 22);
+
+        self.progress.frame = CGRectMake(rx, infoY + 58, rw, 22);
+        self.elapsedLabel.frame = CGRectMake(rx, infoY + 80, 60, 16);
+        self.remainingLabel.frame = CGRectMake(rx + rw - 60, infoY + 80, 60, 16);
+        self.formatLabel.frame = CGRectMake(rx + 60, infoY + 80, rw - 120, 16);
+
+        CGFloat dockY = infoY + 104;
+        CGFloat dockH = 114;
+        self.bottomDock.frame = CGRectMake(rx, dockY, rw, dockH);
+        self.bottomDock.layer.cornerRadius = 6;
+        self.bottomDock.clipsToBounds = YES;
+
+        CGFloat cx = rx + rw / 2;
+        self.playButton.frame = CGRectMake(cx - 30, dockY + 6, 60, 48);
+        self.spinner.center = self.playButton.center;
+        self.previousButton.frame = CGRectMake(cx - 96, dockY + 10, 48, 40);
+        self.nextButton.frame = CGRectMake(cx + 48, dockY + 10, 48, 40);
+        self.shuffleButton.frame = CGRectMake(rx + 10, dockY + 12, 36, 36);
+        self.repeatButton.frame = CGRectMake(rx + rw - 46, dockY + 12, 36, 36);
+
+        CGFloat r2Y = dockY + 60;
+        self.lyricsButton.frame = CGRectMake(rx + 10, r2Y - 2, 36, 36);
+        self.queueButton.frame = CGRectMake(rx + rw - 46, r2Y - 2, 36, 36);
+        self.volume.frame = CGRectMake(rx + 56, r2Y + 4, rw - 112, 22);
+    } else {
+        self.bottomDock.layer.cornerRadius = 0;
+        self.bottomDock.clipsToBounds = NO;
+        CGFloat dockContentH = (s.height < 500) ? 94.0f : 106.0f;
+        CGFloat dockH = dockContentH + bottom;
+        self.bottomDock.frame = CGRectMake(0, s.height - dockH, s.width, dockH);
+
+        CGFloat startY = top + barH;
+        CGFloat availableH = (s.height - dockH) - startY;
+        CGFloat infoH = (s.height < 500) ? 72.0f : 86.0f;
+        CGFloat maxSideH = availableH - infoH - ((s.height < 500) ? 14.0f : 24.0f);
+        CGFloat side = MIN(s.width - (S6IsPad() ? 140 : 40), maxSideH);
+        if (side < 120) side = 120;
+        CGFloat panelY = startY + (availableH - infoH - side) / 2;
+        if (panelY < startY + 6) panelY = startY + 6;
+
+        self.artContainer.frame = CGRectMake((s.width - side) / 2, panelY, side, side);
+        self.lyrics.view.frame = CGRectMake(20, panelY - 4, s.width - 40, side + 8);
+        self.queue.view.frame = CGRectMake(0, panelY - 4, s.width, side + 8);
+
+        CGFloat infoY = CGRectGetMaxY(self.artContainer.frame) + ((s.height < 500) ? 6.0f : 12.0f);
+        CGFloat infoW = MIN(s.width - 32, 540);
+        CGFloat infoX = (s.width - infoW) / 2;
+
+        CGFloat titleH = (s.height < 500) ? 22.0f : 26.0f;
+        CGFloat artistH = (s.height < 500) ? 18.0f : 20.0f;
+        self.titleLabel.frame = CGRectMake(infoX + 36, infoY, infoW - 72, titleH);
+        self.heartButton.frame = CGRectMake(infoX + infoW - 36, infoY - 4, 36, 36);
+        self.artistButton.frame = CGRectMake(infoX + 36, infoY + titleH, infoW - 72, artistH);
+
+        CGFloat progY = infoY + titleH + artistH + ((s.height < 500) ? 2.0f : 6.0f);
+        self.progress.frame = CGRectMake(infoX, progY, infoW, 20);
+        self.elapsedLabel.frame = CGRectMake(infoX, progY + 18, 56, 14);
+        self.remainingLabel.frame = CGRectMake(infoX + infoW - 56, progY + 18, 56, 14);
+        self.formatLabel.frame = CGRectMake(infoX + 56, progY + 18, infoW - 112, 14);
+
+        CGFloat dockY = self.bottomDock.frame.origin.y;
+        CGFloat dockW = MIN(s.width - 20, 540);
+        CGFloat dockX = (s.width - dockW) / 2;
+        CGFloat cx = s.width / 2;
+
+        CGFloat btnY = dockY + ((s.height < 500) ? 4.0f : 8.0f);
+        CGFloat playBtnH = (s.height < 500) ? 44.0f : 50.0f;
+        self.playButton.frame = CGRectMake(cx - 30, btnY, 60, playBtnH);
+        self.spinner.center = self.playButton.center;
+        self.previousButton.frame = CGRectMake(cx - 96, btnY + 2, 48, 40);
+        self.nextButton.frame = CGRectMake(cx + 48, btnY + 2, 48, 40);
+        self.shuffleButton.frame = CGRectMake(dockX + 6, btnY + 4, 36, 36);
+        self.repeatButton.frame = CGRectMake(dockX + dockW - 42, btnY + 4, 36, 36);
+
+        CGFloat r2Y = btnY + playBtnH + ((s.height < 500) ? 2.0f : 6.0f);
+        self.lyricsButton.frame = CGRectMake(dockX + 6, r2Y - 2, 36, 36);
+        self.queueButton.frame = CGRectMake(dockX + dockW - 42, r2Y - 2, 36, 36);
+        self.volume.frame = CGRectMake(dockX + 50, r2Y + 4, dockW - 100, 22);
     }
 }
 
@@ -522,7 +739,7 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
 
 - (void)showPanel
 {
-    self.art.hidden = self.panel != S6NowPlayingArt;
+    self.artContainer.hidden = self.panel != S6NowPlayingArt;
     self.lyrics.view.hidden = self.panel != S6NowPlayingLyrics;
     self.queue.view.hidden = self.panel != S6NowPlayingQueue;
     S6Theme *theme = [S6Theme shared];
@@ -549,7 +766,11 @@ enum { S6QueueNow, S6QueueUser, S6QueueNext, S6QueueSectionCount };
     self.titleLabel.text = [S6Utils displayText:t.name];
     [self.artistButton setTitle:[S6Utils displayText:[t artistNames]] forState:UIControlStateNormal];
     NSString *context = player.contextName.length ? player.contextName : t.album.name;
-    self.contextLabel.text = context.length ? [NSString stringWithFormat:@"%@\n%@", [L(@"Playing from") uppercaseString], context] : @"";
+    if ([S6Settings classicPlayer]) {
+        self.contextLabel.text = context.length ? context : L(@"Now playing");
+    } else {
+        self.contextLabel.text = context.length ? [NSString stringWithFormat:@"%@\n%@", [L(@"Playing from") uppercaseString], context] : @"";
+    }
     NSString *url = [t imageURLForSize:640];
     [self.art setImageURL:url placeholder:[theme artPlaceholderWithSize:300]];
     if (url && ![url isEqualToString:self.backdropURL]) {

@@ -1,8 +1,8 @@
-Package: com.samcejko.spot6
-Name: Spot6
-Version: 0.2.2
+Package: com.samcejko.sixify
+Name: Sixify
+Version: 0.2.3
 Architecture: iphoneos-arm
-Description: Unofficial Spotify client for iOS 6 (universal), in English and Czech: Home, search, your library and playlists, albums, artists, podcasts, synced lyrics, an editable queue kept between launches, shuffle and repeat, crossfade, a sleep timer, a data saver, song radio, gapless playback in up to 320 kbit/s, the lock screen controls. Log in from the Spotify app on your phone. Needs Spotify Premium.
+Description: Unofficial Spotify client for iOS 6 (universal), in English and Czech: Home, search, your library and playlists, albums, artists, podcasts, synced lyrics, classic iOS 6 player design option, an editable queue kept between launches, shuffle and repeat, crossfade, a sleep timer, a data saver, song radio, gapless playback in up to 320 kbit/s, the lock screen controls. Log in from the Spotify app on your phone. Needs Spotify Premium.
 Maintainer: samcejko
 Author: samcejko
 Section: Multimedia

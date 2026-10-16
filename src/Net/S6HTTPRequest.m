@@ -1,4 +1,4 @@
-#import "S6HTTPRequest.h"
+﻿#import "S6HTTPRequest.h"
 #import "S6TLSSocket.h"
 #import "S6ConnectionPool.h"
 #import "S6Common.h"
@@ -98,7 +98,7 @@ static dispatch_semaphore_t S6ConnectionSlots(void)
     dispatch_once(&once, ^{
         UIDevice *d = [UIDevice currentDevice];
         NSString *v = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] ?: @"0";
-        agent = [NSString stringWithFormat:@"Spot6/%@ (%@; iOS %@)", v, d.model, d.systemVersion];
+        agent = [NSString stringWithFormat:@"Sixify/%@ (%@; iOS %@)", v, d.model, d.systemVersion];
     });
     return agent;
 }

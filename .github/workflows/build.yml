@@ -1,4 +1,4 @@
-name: Build Spot6 (iOS 6 armv7 + iOS 14 arm64)
+﻿name: Build Sixify (iOS 6 armv7 + iOS 14 arm64)
 
 on:
   push:
@@ -27,11 +27,11 @@ jobs:
           - name: ios6-armv7
             scheme: ""
             suffix: ""
-            artifact: Spot6-packages
+            artifact: Sixify-packages
           - name: ios14-arm64
             scheme: rootless
             suffix: "-arm64"
-            artifact: Spot6-packages-arm64
+            artifact: Sixify-packages-arm64
     name: ${{ matrix.name }}
     runs-on: ubuntu-22.04
     timeout-minutes: 45
@@ -118,7 +118,7 @@ jobs:
         run: |
           set -e
           rm -rf Resources/licenses && mkdir -p Resources/licenses
-          cp LICENSE Resources/licenses/Spot6-LICENSE.txt
+          cp LICENSE Resources/licenses/Sixify-LICENSE.txt
           cp THIRD-PARTY-NOTICES.md Resources/licenses/THIRD-PARTY-NOTICES.txt
           cp vendor/mbedtls/LICENSE Resources/licenses/mbedtls-LICENSE.txt
           ls -la Resources/licenses
@@ -189,12 +189,12 @@ jobs:
           make clean || true
           # (-k: every file is compiled even after one fails, so one run shows every compile error)
           make package FINALPACKAGE=1 -j"$(nproc)" -k 2>&1 | tee build.log
-          APP=$(find .theos/_ -type d -name Spot6.app | head -n1)
+          APP=$(find .theos/_ -type d -name Sixify.app | head -n1)
           test -n "$APP"
           echo "APP=$APP" >> "$GITHUB_ENV"
           echo "== staged app ($APP) =="
           ls -la "$APP"
-          lipo -info "$APP/Spot6" 2>/dev/null || true
+          lipo -info "$APP/Sixify" 2>/dev/null || true
 
       - name: Make IPA
         run: |
@@ -203,13 +203,13 @@ jobs:
           echo "app: $APP"
           LDID=$(command -v ldid || find "$THEOS" -type f -name ldid | head -n1)
           echo "ldid: $LDID"
-          "$LDID" -S"$GITHUB_WORKSPACE/entitlements.xml" "$APP/Spot6"
-          "$LDID" -e "$APP/Spot6" | head -n 20
+          "$LDID" -S"$GITHUB_WORKSPACE/entitlements.xml" "$APP/Sixify"
+          "$LDID" -e "$APP/Sixify" | head -n 20
           VERSION=$(grep '^Version:' control | cut -d' ' -f2)
           rm -rf /tmp/ipa && mkdir -p /tmp/ipa/Payload packages
           cp -a "$APP" /tmp/ipa/Payload/
-          # (the bundle inside keeps the app's first name, Spot6.app; the file is named as the app is shown)
-          (cd /tmp/ipa && zip -qr9 "$GITHUB_WORKSPACE/packages/Spot6-$VERSION${{ matrix.suffix }}.ipa" Payload)
+          # (the bundle inside keeps the app's first name, Sixify.app; the file is named as the app is shown)
+          (cd /tmp/ipa && zip -qr9 "$GITHUB_WORKSPACE/packages/Sixify-$VERSION${{ matrix.suffix }}.ipa" Payload)
           ls -la packages/
 
       - name: Upload packages

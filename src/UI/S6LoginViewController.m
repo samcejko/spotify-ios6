@@ -1,4 +1,4 @@
-#import "S6LoginViewController.h"
+﻿#import "S6LoginViewController.h"
 #import "S6Session.h"
 #import "S6Zeroconf.h"
 #import "S6Settings.h"
@@ -52,7 +52,7 @@
     [self.scroll addSubview:self.mark];
     self.appName = [self label:[UIFont fontWithName:@"HelveticaNeue-Bold" size:S6IsPad() ? 40 : 30] ?: [UIFont boldSystemFontOfSize:34]
                          color:[UIColor whiteColor] in:self.scroll];
-    self.appName.text = @"Spot6";
+    self.appName.text = @"Sixify";
     self.appName.textAlignment = NSTextAlignmentCenter;
     self.titleLabel = [self label:[UIFont fontWithName:@"HelveticaNeue-Bold" size:S6IsPad() ? 22 : 18] ?: [UIFont boldSystemFontOfSize:20]
                             color:[theme primaryTextColor] in:self.scroll];
@@ -63,7 +63,7 @@
     NSArray *steps = @[ [NSString stringWithFormat:L(@"Connect this %@ and your phone to the same Wi-Fi."), device],
                         L(@"Open Spotify on your phone and start playing anything."),
                         [NSString stringWithFormat:L(@"Tap the devices button and choose “%@”."), [S6Settings deviceName]],
-                        L(@"Spot6 logs in by itself. Then you control everything right here.") ];
+                        L(@"Sixify logs in by itself. Then you control everything right here.") ];
     NSMutableArray *numbers = [NSMutableArray array], *labels = [NSMutableArray array];
     for (NSUInteger i = 0; i < steps.count; i++) {
         UILabel *n = [self label:[UIFont fontWithName:@"HelveticaNeue-Bold" size:15] ?: [UIFont boldSystemFontOfSize:15] color:[UIColor whiteColor] in:self.scroll];
@@ -98,7 +98,7 @@
 
     self.noteLabel = [self label:[theme smallFont] color:[theme secondaryTextColor] in:self.scroll];
     self.noteLabel.textAlignment = NSTextAlignmentCenter;
-    self.noteLabel.text = L(@"Spot6 needs Spotify Premium. Your password never goes through this app: the Spotify app hands over a login meant only for this device. Spot6 is not made by Spotify.");
+    self.noteLabel.text = L(@"Sixify needs Spotify Premium. Your password never goes through this app: the Spotify app hands over a login meant only for this device. Sixify is not made by Spotify.");
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
     [nc addObserver:self selector:@selector(update) name:S6ZeroconfDidChangeNotification object:nil];
