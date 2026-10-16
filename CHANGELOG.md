@@ -1,8 +1,8 @@
-﻿# Changelog
+# Changelog
 
 ## 0.2.3 (2026-10-16)
 
-- Renamed from Sixify to Sixify (`com.samcejko.sixify`).
+- Renamed from Spot6 to Sixify (`com.samcejko.sixify`).
 - Classic iOS 6 graphite player screen option in Settings → Playback (with live switching).
 
 ## 0.2.2 (2026-10-16)
