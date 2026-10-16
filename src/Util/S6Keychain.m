@@ -1,4 +1,4 @@
-﻿#import "S6Keychain.h"
+#import "S6Keychain.h"
 #import "S6Common.h"
 #import <Security/Security.h>
 
@@ -22,6 +22,20 @@ static NSString * const S6KeychainService = @"com.samcejko.sixify";
     if (SecItemCopyMatching((__bridge CFDictionaryRef)q, &result) == errSecSuccess && result) {
         NSData *data = (__bridge_transfer NSData *)result;
         return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    }
+    NSMutableDictionary *qOld = [@{ (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+                                    (__bridge id)kSecAttrService: @"com.samcejko.spot6",
+                                    (__bridge id)kSecAttrAccount: key ?: @"" } mutableCopy];
+    qOld[(__bridge id)kSecReturnData] = (__bridge id)kCFBooleanTrue;
+    qOld[(__bridge id)kSecMatchLimit] = (__bridge id)kSecMatchLimitOne;
+    CFTypeRef oldResult = NULL;
+    if (SecItemCopyMatching((__bridge CFDictionaryRef)qOld, &oldResult) == errSecSuccess && oldResult) {
+        NSData *data = (__bridge_transfer NSData *)oldResult;
+        NSString *s = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if (s.length) {
+            [self setString:s forKey:key];
+            return s;
+        }
     }
     NSString *fallback = [[NSUserDefaults standardUserDefaults] stringForKey:[@"kc." stringByAppendingString:key]];
     return fallback;

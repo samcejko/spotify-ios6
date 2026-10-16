@@ -1,4 +1,4 @@
-﻿#import "S6Settings.h"
+#import "S6Settings.h"
 #import "S6Keychain.h"
 #import "S6Utils.h"
 #import "S6Common.h"
@@ -11,6 +11,14 @@ static const NSUInteger S6MaxRecentSearches = 12;
 
 + (void)registerDefaults
 {
+    // If upgrading from Spot6, bring over existing preferences
+    NSDictionary *old = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@"com.samcejko.spot6"];
+    if (old.count && ![DEF objectForKey:@"deviceId"]) {
+        for (NSString *k in old) {
+            if (![DEF objectForKey:k]) [DEF setObject:old[k] forKey:k];
+        }
+        [DEF synchronize];
+    }
     [DEF registerDefaults:@{
         @"quality": @(S6QualityVeryHigh),
         @"normalize": @YES,
@@ -36,6 +44,7 @@ static const NSUInteger S6MaxRecentSearches = 12;
 + (NSDictionary *)account
 {
     NSString *json = [S6Keychain stringForKey:S6AccountKey];
+    if (!json.length) json = [S6Keychain stringForKey:@"spot6.account"];
     if (!json.length) return nil;
     return S6Dict([S6Utils JSONObjectFromData:[json dataUsingEncoding:NSUTF8StringEncoding]]);
 }
